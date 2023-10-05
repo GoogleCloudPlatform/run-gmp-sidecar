@@ -25,7 +25,7 @@ steps:
       - BUILD_SAMPLE_APP
 
   - name: "gcr.io/cloud-builders/docker"
-    args: ["build", "-t", "${_IMAGE_COLLECTOR}", "./collector"]
+    args: ["build", "-t", "${_IMAGE_COLLECTOR}", "."]
     id: BUILD_COLLECTOR
     waitFor: ["-"]
 
@@ -81,10 +81,10 @@ steps:
 
 substitutions:
   _REGION: us-east1
-  _REGISTRY: ${_REGION}-docker.pkg.dev/${PROJECT_ID}/run-otel-example
+  _REGISTRY: ${_REGION}-docker.pkg.dev/${PROJECT_ID}/run-gmp
   _IMAGE_APP: ${_REGISTRY}/sample-app
   _IMAGE_COLLECTOR: ${_REGISTRY}/collector
-  _SA_NAME: run-otel-example-sa
+  _SA_NAME: run-gmp-sa
 
 images:
   - ${_IMAGE_APP}

@@ -57,7 +57,7 @@ The bundled configuration file for Cloud Build (`cloudbuild.yaml`) requires a ne
 * `roles/artifactregistry.createOnPushWriter`
 * `roles/run.admin`
 
-Running `create-service-account.sh` creates a new service account `run-otel-example-sa@<project-id>.iam.gserviceaccount.com` for you. Then launch a Cloud Build task with `gcloud` command.
+Running `create-service-account.sh` creates a new service account `run-gmp-sa@<project-id>.iam.gserviceaccount.com` for you. Then launch a Cloud Build task with `gcloud` command.
 
 ```console
 ./create-service-account.sh
@@ -67,7 +67,7 @@ gcloud builds submit . --config=cloudbuild.yaml
 After the build, run the following command to check the endpoint URL.
 
 ```console
-gcloud run services describe opentelemetry-cloud-run-sample --region=us-east1 --format="value(status.url)"
+gcloud run services describe run-gmp-sidecar-service --region=us-east1 --format="value(status.url)"
 ```
 
 #### Build and Run Manually
@@ -82,7 +82,7 @@ commands:
 
 ```
 export GCP_PROJECT=<project-id>
-gcloud artifacts repositories create run-otel-example \
+gcloud artifacts repositories create run-gmp \
     --repository-format=docker \
     --location=us-east1
 ```
@@ -98,8 +98,8 @@ Build and push the app with the following commands:
 
 ```
 pushd app
-docker build -t us-east1-docker.pkg.dev/$GCP_PROJECT/run-otel-example/sample-app .
-docker push us-east1-docker.pkg.dev/$GCP_PROJECT/run-otel-example/sample-app
+docker build -t us-east1-docker.pkg.dev/$GCP_PROJECT/run-gmp/sample-app .
+docker push us-east1-docker.pkg.dev/$GCP_PROJECT/run-gmp/sample-app
 popd
 ```
 
@@ -112,10 +112,8 @@ config file with it.
 Build the Collector image with the following commands:
 
 ```
-pushd collector
-docker build -t us-east1-docker.pkg.dev/$GCP_PROJECT/run-otel-example/collector .
-docker push us-east1-docker.pkg.dev/$GCP_PROJECT/run-otel-example/collector
-popd
+docker build -t us-east1-docker.pkg.dev/$GCP_PROJECT/run-gmp/collector .
+docker push us-east1-docker.pkg.dev/$GCP_PROJECT/run-gmp/collector
 ```
 
 ##### Create the Cloud Run Service
@@ -127,8 +125,8 @@ Replace the `%SAMPLE_APP_IMAGE%` and `%OTELCOL_IMAGE%` placeholders in
 `run-service.yaml` with the images you built above, ie:
 
 ```
-sed -i s@%OTELCOL_IMAGE%@us-east1-docker.pkg.dev/${GCP_PROJECT}/run-otel-example/collector@g run-service.yaml
-sed -i s@%SAMPLE_APP_IMAGE%@us-east1-docker.pkg.dev/${GCP_PROJECT}/run-otel-example/sample-app@g run-service.yaml
+sed -i s@%OTELCOL_IMAGE%@us-east1-docker.pkg.dev/${GCP_PROJECT}/run-gmp/collector@g run-service.yaml
+sed -i s@%SAMPLE_APP_IMAGE%@us-east1-docker.pkg.dev/${GCP_PROJECT}/run-gmp/sample-app@g run-service.yaml
 ```
 
 Create the Service with the following command:
@@ -145,7 +143,7 @@ Finally before you make make the request to the URL, you need to change
 the Cloud Run service policy to accept unauthenticated HTTP access.
 
 ```
-gcloud run services set-iam-policy opentelemetry-cloud-run-sample policy.yaml
+gcloud run services set-iam-policy run-gmp-sidecar-service policy.yaml
 ```
 
 ### View telemetry in Google Cloud
@@ -170,8 +168,8 @@ Updated sidecar-sample-counter metric!
 After running the demo, please make sure to clean up your project so that you don't consume unexpected resources and get charged.
 
 ```console
-gcloud run services delete opentelemetry-cloud-run-sample --region us-east1 --quiet
-gcloud artifacts repositories delete run-otel-example \
+gcloud run services delete run-gmp-sidecar-service --region us-east1 --quiet
+gcloud artifacts repositories delete run-gmp \
   --location=us-east1 \
   --quiet
 ```

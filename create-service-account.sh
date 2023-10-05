@@ -16,7 +16,7 @@
 set -ex
 
 PROJECT_ID=$(gcloud config get-value project)
-SA_NAME="run-otel-example-sa"
+SA_NAME="run-gmp-sa"
 REGION="us-east1"
 
 #### Create service account with required roles
@@ -53,7 +53,7 @@ gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
   --quiet
 
 #### Create artifact registry
-gcloud artifacts repositories create run-otel-example \
+gcloud artifacts repositories create run-gmp \
   --location "${REGION}" \
   --repository-format=docker \
   --quiet
