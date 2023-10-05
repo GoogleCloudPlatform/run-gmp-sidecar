@@ -23,22 +23,22 @@ spec:
     metadata:
       annotations:
         run.googleapis.com/execution-environment: gen1
-        run.googleapis.com/container-dependencies: '{"app":["collector"]}'
+        run.googleapis.com/container-dependencies: '{"collector":["app"]}'
     spec:
       containers:
-      - image: "us-east1-docker.pkg.dev/ridwanmsharif-dev/run-otel-example/sample-app"
+      - image: "%SAMPLE_APP_IMAGE%"
         name: app
+        startupProbe:
+          httpGet:
+            path: /
+            port: 8080
         ports:
         - containerPort: 8080
         volumeMounts:
         - mountPath: /logging
           name: shared-logs
-      - image: "us-east1-docker.pkg.dev/ridwanmsharif-dev/run-otel-example/collector"
+      - image: "%OTELCOL_IMAGE%"
         name: collector
-        startupProbe:
-          httpGet:
-            path: /
-            port: 13133
         volumeMounts:
         - mountPath: /logging
           name: shared-logs

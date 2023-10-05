@@ -17,7 +17,7 @@ WORKDIR /app
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o sample-app
 
-FROM alpine:3
-RUN apk add --no-cache ca-certificates
+FROM ubuntu:latest
+RUN apt-get -y update; apt-get -y install curl
 COPY --from=builder /app/sample-app /sample-app
 CMD ["/sample-app"]
