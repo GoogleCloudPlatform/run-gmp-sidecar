@@ -14,7 +14,7 @@
 
 steps:
   - name: "gcr.io/cloud-builders/docker"
-    args: ["build", "-t", "${_IMAGE_APP}", "./sample-apps/simple-app"]
+    args: ["build", "-t", "${_IMAGE_APP}", "./sample-apps/single-req-app"]
     id: BUILD_SAMPLE_APP
     waitFor: ["-"]
 

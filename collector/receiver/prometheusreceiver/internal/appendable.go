@@ -50,13 +50,15 @@ func NewAppendable(
 	preserveUntyped bool,
 	startTimeMetricRegex *regexp.Regexp,
 	useCreatedMetric bool,
+	useCollectorStartTimeFallback bool,
+	allowCumulativeResets bool,
 	externalLabels labels.Labels,
 	registry *featuregate.Registry) (storage.Appendable, error) {
 	var metricAdjuster MetricsAdjuster
 	if !useStartTimeMetric {
 		metricAdjuster = NewInitialPointAdjuster(set.Logger, gcInterval, useCreatedMetric)
 	} else {
-		metricAdjuster = NewStartTimeMetricAdjuster(set.Logger, startTimeMetricRegex)
+		metricAdjuster = NewStartTimeMetricAdjuster(set.Logger, gcInterval, startTimeMetricRegex, useCollectorStartTimeFallback, allowCumulativeResets)
 	}
 
 	obsrecv, err := obsreport.NewReceiver(obsreport.ReceiverSettings{ReceiverID: set.ID, Transport: transport, ReceiverCreateSettings: set})

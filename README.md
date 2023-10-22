@@ -97,7 +97,7 @@ gcloud auth configure-docker \
 Build and push the app with the following commands:
 
 ```
-pushd app
+pushd sample-apps/simple-app
 docker build -t us-east1-docker.pkg.dev/$GCP_PROJECT/run-gmp/sample-app .
 docker push us-east1-docker.pkg.dev/$GCP_PROJECT/run-gmp/sample-app
 popd
@@ -158,9 +158,7 @@ curl $SERVICE_URL/metrics
 This should return the following output on success:
 
 ```
-Logged request to /logging/sample-app.log
-Generated 10 spans!
-Updated sidecar-sample-counter metric!
+User request received!
 ```
 
 ### Clean up

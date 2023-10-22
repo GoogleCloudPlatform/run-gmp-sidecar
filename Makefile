@@ -103,10 +103,20 @@ GO_BUILD_OUT ?= ./bin/rungmpcol
 build-collector:
 	CGO_ENABLED=0 go build -tags=$(GO_BUILD_TAGS) -o $(GO_BUILD_OUT) $(LD_FLAGS) -buildvcs=false ./collector/cmd/rungmpcol
 
-OTELCOL_BINARY = google-cloud-run-rmp-sidecar-$(GOOS)
+OTELCOL_BINARY = google-cloud-run-gmp-sidecar-$(GOOS)
 .PHONY: build-collector-full-name
 build-collector-full-name:
 	$(MAKE) GO_BUILD_OUT=./bin/$(OTELCOL_BINARY) build-collector
+
+ENTRYPOINT_BINARY = run-gmp-entrypoint
+.PHONY: build-run-gmp-entrypoint
+build-run-gmp-entrypoint:
+	CGO_ENABLED=0 go build -tags=$(GO_BUILD_TAGS) -o ./bin/$(ENTRYPOINT_BINARY) -buildvcs=false entrypoint.go
+
+.PHONY: build
+build:
+	$(MAKE) build-collector
+	$(MAKE) build-run-gmp-entrypoint
 
 .PHONY: test
 test:

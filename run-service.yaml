@@ -30,7 +30,11 @@ spec:
         name: app
         startupProbe:
           httpGet:
-            path: /
+            path: /startup
+            port: 8080
+        livenessProbe:
+          httpGet:
+            path: /liveness
             port: 8080
         ports:
         - containerPort: 8080

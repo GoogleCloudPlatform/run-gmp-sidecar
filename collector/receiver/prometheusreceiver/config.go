@@ -45,19 +45,42 @@ const (
 	targetAllocatorHTTPSDConfigKey = "http_sd_config"
 )
 
+type MetricAdjusterOpts struct {
+	// UseStartTimeMetric enables retrieving the start time of all counter
+	// metrics from the process_start_time_seconds metric. This is only correct
+	// if all counters on that endpoint started after the process start time,
+	// and the process is the only actor exporting the metric after the process
+	// started. It should not be used in "exporters" which export counters that
+	// may have started before the process itself. Use only if you know what you
+	// are doing, as this may result in incorrect rate calculations.
+	UseStartTimeMetric   bool   `mapstructure:"use_start_time_metric"`
+	StartTimeMetricRegex string `mapstructure:"start_time_metric_regex"`
+
+	// UseCollectorStartTimeFallback enables using a fallback start time if a
+	// start time is otherwise unavailable when adjusting metrics. This would
+	// happen if the UseStartTimeMetric is used but the application doesn't emit
+	// a process_start_time_seconds metric or a metric that matches the
+	// StartTimeMetricRegex provided.
+	//
+	// If enabled, the fallback start time used for adjusted metrics is an
+	// approximation of the collector start time.
+	//
+	// This option should only be used when we can guarantee that the scraped
+	// processes that emit metrics that started after the collector has started.
+	UseCollectorStartTimeFallback bool `mapstructure:"use_collector_start_time_fallback"`
+	// AllowCumulativeResets enables preserving resets of cumulative points when
+	// the metric adjuster is used. Should be enabled if we expect cumulative
+	// point resets AND we want to use the StartTimeMetricAdjuster. Note that
+	// this will require that we cache the previous point for every timeseries,
+	// and so can increase memory used by the collector.
+	AllowCumulativeResets bool `mapstructure:"allow_cumulative_resets"`
+}
+
 // Config defines configuration for Prometheus receiver.
 type Config struct {
 	PrometheusConfig *promconfig.Config `mapstructure:"-"`
 	BufferPeriod     time.Duration      `mapstructure:"buffer_period"`
 	BufferCount      int                `mapstructure:"buffer_count"`
-	// UseStartTimeMetric enables retrieving the start time of all counter metrics
-	// from the process_start_time_seconds metric. This is only correct if all counters on that endpoint
-	// started after the process start time, and the process is the only actor exporting the metric after
-	// the process started. It should not be used in "exporters" which export counters that may have
-	// started before the process itself. Use only if you know what you are doing, as this may result
-	// in incorrect rate calculations.
-	UseStartTimeMetric   bool   `mapstructure:"use_start_time_metric"`
-	StartTimeMetricRegex string `mapstructure:"start_time_metric_regex"`
 
 	// PreserveUntyped is a setting that lets the collector preserve the untypedness of
 	// untyped metrics as a metric attribute. If set, all untyped prometheus metrics from
@@ -71,6 +94,10 @@ type Config struct {
 	// that requires that all keys present in the config actually exist on the
 	// structure, ie.: it will error if an unknown key is present.
 	ConfigPlaceholder interface{} `mapstructure:"config"`
+
+	// Settings for adjusting metrics. Will default to using an InitialPointAdjuster
+	// which will use the first scraped point to define the start time for the timeseries.
+	AdjusterOpts MetricAdjusterOpts `mapstructure:",squash"`
 }
 
 type targetAllocator struct {

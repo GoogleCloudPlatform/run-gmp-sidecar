@@ -16,8 +16,8 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"net/http"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -52,10 +52,10 @@ func (collector *fooBarCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- collector.barMetric
 }
 
-// Collect implements required collect function for all promehteus collectors
+// Collect implements required collect function for all prometheus collectors
 func (collector *fooBarCollector) Collect(ch chan<- prometheus.Metric) {
-	m1 := prometheus.MustNewConstMetric(collector.fooMetric, prometheus.GaugeValue, float64(rand.Int31()))
-	m2 := prometheus.MustNewConstMetric(collector.barMetric, prometheus.CounterValue, float64(rand.Int31()))
+	m1 := prometheus.MustNewConstMetric(collector.fooMetric, prometheus.GaugeValue, float64(time.Now().Unix()))
+	m2 := prometheus.MustNewConstMetric(collector.barMetric, prometheus.CounterValue, float64(time.Now().Unix()))
 	ch <- m1
 	ch <- m2
 }
@@ -70,6 +70,8 @@ func main() {
 
 	entrypointMux := http.NewServeMux()
 	entrypointMux.HandleFunc("/", entrypointHandler)
+	entrypointMux.HandleFunc("/startup", entrypointHandler)
+	entrypointMux.HandleFunc("/liveness", entrypointHandler)
 
 	promMux := http.NewServeMux()
 	promMux.Handle("/metrics", promhttp.Handler())

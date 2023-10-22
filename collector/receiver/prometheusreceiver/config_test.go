@@ -48,8 +48,8 @@ func TestLoadConfig(t *testing.T) {
 	r1 := cfg.(*Config)
 	assert.Equal(t, r1.PrometheusConfig.ScrapeConfigs[0].JobName, "demo")
 	assert.Equal(t, time.Duration(r1.PrometheusConfig.ScrapeConfigs[0].ScrapeInterval), 5*time.Second)
-	assert.Equal(t, r1.UseStartTimeMetric, true)
-	assert.Equal(t, r1.StartTimeMetricRegex, "^(.+_)*process_start_time_seconds$")
+	assert.Equal(t, r1.AdjusterOpts.UseStartTimeMetric, true)
+	assert.Equal(t, r1.AdjusterOpts.StartTimeMetricRegex, "^(.+_)*process_start_time_seconds$")
 
 	assert.Equal(t, "http://my-targetallocator-service", r1.TargetAllocator.Endpoint)
 	assert.Equal(t, 30*time.Second, r1.TargetAllocator.Interval)

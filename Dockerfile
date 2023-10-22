@@ -7,12 +7,12 @@ RUN go install github.com/client9/misspell/cmd/misspell@v0.3.4 \
     && go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.52.1 \
     && go install github.com/google/addlicense@v1.0.0
 RUN apt update && apt install -y make
-RUN make build-collector
+RUN make build
 
 FROM alpine:3
 RUN apk add --no-cache ca-certificates
 COPY --from=builder /sidecar/bin/rungmpcol /rungmpcol
-COPY collector-config.yaml /etc/rungmp/config.yaml
+COPY --from=builder /sidecar/bin/run-gmp-entrypoint /run-gmp-entrypoint
+COPY collector-config.yaml /etc/rungmp/config.yml
 
-ENTRYPOINT ["/rungmpcol"]
-CMD ["--config", "/etc/rungmp/config.yaml"]
+ENTRYPOINT ["/run-gmp-entrypoint"]

@@ -260,9 +260,9 @@ func (r *pReceiver) initPrometheusComponents(ctx context.Context, host component
 	}()
 
 	var startTimeMetricRegex *regexp.Regexp
-	if r.cfg.StartTimeMetricRegex != "" {
+	if r.cfg.AdjusterOpts.StartTimeMetricRegex != "" {
 		var err error
-		startTimeMetricRegex, err = regexp.Compile(r.cfg.StartTimeMetricRegex)
+		startTimeMetricRegex, err = regexp.Compile(r.cfg.AdjusterOpts.StartTimeMetricRegex)
 		if err != nil {
 			return err
 		}
@@ -272,26 +272,28 @@ func (r *pReceiver) initPrometheusComponents(ctx context.Context, host component
 		r.consumer,
 		r.settings,
 		gcInterval(r.cfg.PrometheusConfig),
-		r.cfg.UseStartTimeMetric,
+		r.cfg.AdjusterOpts.UseStartTimeMetric,
 		r.cfg.PreserveUntyped,
 		startTimeMetricRegex,
 		useCreatedMetricGate.IsEnabled(),
+		r.cfg.AdjusterOpts.UseCollectorStartTimeFallback,
+		r.cfg.AdjusterOpts.AllowCumulativeResets,
 		r.cfg.PrometheusConfig.GlobalConfig.ExternalLabels,
 		r.registry,
 	)
 	if err != nil {
 		return err
 	}
-	r.scrapeManager = scrape.NewManager(&scrape.Options{PassMetadataInContext: true}, logger, store)
+
+	// For the sidecar, use a 10s offset from the start before scraping the targets.
+	tenSecondOffSet := 10 * time.Second
+	r.scrapeManager = scrape.NewManager(&scrape.Options{PassMetadataInContext: true, InitialScrapeOffset: &tenSecondOffSet}, logger, store)
 
 	go func() {
 		// The scrape manager needs to wait for the configuration to be loaded before beginning
 		<-r.configLoaded
 		r.settings.Logger.Info("Starting scrape manager")
-		if err := r.scrapeManager.Run(r.discoveryManager.SyncCh()); err != nil {
-			r.settings.Logger.Error("Scrape manager failed", zap.Error(err))
-			host.ReportFatalError(err)
-		}
+		r.scrapeManager.Run(r.discoveryManager.SyncCh())
 	}()
 	return nil
 }
@@ -314,12 +316,14 @@ func gcInterval(cfg *config.Config) time.Duration {
 
 // Shutdown stops and cancels the underlying Prometheus scrapers.
 func (r *pReceiver) Shutdown(context.Context) error {
+	r.settings.Logger.Info("collector: stopping collector's prometheus receiver")
+	if r.scrapeManager != nil {
+		r.scrapeManager.StopAfterScrapeAttempt(time.Now())
+	}
 	if r.cancelFunc != nil {
 		r.cancelFunc()
 	}
-	if r.scrapeManager != nil {
-		r.scrapeManager.Stop()
-	}
 	close(r.targetAllocatorStop)
+	r.settings.Logger.Info("collector: final scrape complete. Shutting down rest of pipeline")
 	return nil
 }

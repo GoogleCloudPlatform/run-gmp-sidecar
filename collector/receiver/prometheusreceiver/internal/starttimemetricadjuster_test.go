@@ -17,6 +17,7 @@ package internal
 import (
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -122,7 +123,8 @@ func TestStartTimeMetricMatch(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			stma := NewStartTimeMetricAdjuster(zap.NewNop(), tt.startTimeMetricRegex)
+			gcInterval := 10 * time.Millisecond
+			stma := NewStartTimeMetricAdjuster(zap.NewNop(), gcInterval, tt.startTimeMetricRegex, false, false)
 			if tt.expectedErr != nil {
 				assert.ErrorIs(t, stma.AdjustMetrics(tt.inputs), tt.expectedErr)
 				return

@@ -597,10 +597,12 @@ func testComponent(t *testing.T, targets []*testData, useStartTimeMetric bool, s
 
 	cms := new(consumertest.MetricsSink)
 	receiver := newPrometheusReceiver(receivertest.NewNopCreateSettings(), &Config{
-		PrometheusConfig:     cfg,
-		UseStartTimeMetric:   useStartTimeMetric,
-		StartTimeMetricRegex: startTimeMetricRegex,
-		PreserveUntyped:      true, // This adds a metric label for untyped metrics. Enabling this allows testing for it.
+		PrometheusConfig: cfg,
+		AdjusterOpts: MetricAdjusterOpts{
+			UseStartTimeMetric:   useStartTimeMetric,
+			StartTimeMetricRegex: startTimeMetricRegex,
+		},
+		PreserveUntyped: true, // This adds a metric label for untyped metrics. Enabling this allows testing for it.
 	}, cms, registry)
 
 	require.NoError(t, receiver.Start(ctx, componenttest.NewNopHost()))

@@ -17,6 +17,7 @@ package internal // import "github.com/GoogleCloudPlatform/run-gmp-sidecar/colle
 import (
 	"errors"
 	"regexp"
+	"time"
 
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"
@@ -30,13 +31,34 @@ var (
 
 type startTimeMetricAdjuster struct {
 	startTimeMetricRegex *regexp.Regexp
-	logger               *zap.Logger
+	fallbackStartTime    *time.Time
+	resetPointAdjuster   *initialPointAdjuster
+
+	logger *zap.Logger
 }
 
 // NewStartTimeMetricAdjuster returns a new MetricsAdjuster that adjust metrics' start times based on a start time metric.
-func NewStartTimeMetricAdjuster(logger *zap.Logger, startTimeMetricRegex *regexp.Regexp) MetricsAdjuster {
+func NewStartTimeMetricAdjuster(logger *zap.Logger, gcInterval time.Duration, startTimeMetricRegex *regexp.Regexp, useCollectorStartTimeFallback, allowResets bool) MetricsAdjuster {
+	// Approximate the start time of the collector and use that as the fallback.
+	var fallbackStartTime *time.Time
+	if useCollectorStartTimeFallback {
+		now := time.Now()
+		fallbackStartTime = &now
+	}
+
+	var resetPointAdjuster *initialPointAdjuster
+	if allowResets {
+		resetPointAdjuster = &initialPointAdjuster{
+			jobsMap:              NewJobsMap(gcInterval),
+			logger:               logger,
+			useCreatedMetric:     false,
+			usePointTimeForReset: true,
+		}
+	}
 	return &startTimeMetricAdjuster{
 		startTimeMetricRegex: startTimeMetricRegex,
+		fallbackStartTime:    fallbackStartTime,
+		resetPointAdjuster:   resetPointAdjuster,
 		logger:               logger,
 	}
 }
@@ -44,7 +66,11 @@ func NewStartTimeMetricAdjuster(logger *zap.Logger, startTimeMetricRegex *regexp
 func (stma *startTimeMetricAdjuster) AdjustMetrics(metrics pmetric.Metrics) error {
 	startTime, err := stma.getStartTime(metrics)
 	if err != nil {
-		return err
+		if stma.fallbackStartTime == nil {
+			return err
+		}
+		stma.logger.Warn("Couldn't get start time for metrics. Using fallback start time.", zap.Error(err))
+		startTime = float64(stma.fallbackStartTime.Unix())
 	}
 
 	startTimeTs := timestampFromFloat64(startTime)
@@ -84,6 +110,11 @@ func (stma *startTimeMetricAdjuster) AdjustMetrics(metrics pmetric.Metrics) erro
 				}
 			}
 		}
+	}
+
+	// Handle reset points for cumulative metrics.
+	if stma.resetPointAdjuster != nil {
+		return stma.resetPointAdjuster.AdjustMetrics(metrics)
 	}
 
 	return nil

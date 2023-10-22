@@ -47,7 +47,11 @@ func createMetricsExporter(
 	params exporter.CreateSettings,
 	cfg component.Config) (exporter.Metrics, error) {
 	eCfg := cfg.(*Config)
-	mExp, err := collector.NewGoogleCloudMetricsExporter(ctx, eCfg.GMPConfig.toCollectorConfig(), params.TelemetrySettings.Logger, params.BuildInfo.Version, eCfg.Timeout)
+
+	// We turn off normalization for serverless environments.
+	collectorConfig := eCfg.GMPConfig.toCollectorConfig()
+	collectorConfig.MetricConfig.CumulativeNormalization = false
+	mExp, err := collector.NewGoogleCloudMetricsExporter(ctx, collectorConfig, params.TelemetrySettings.Logger, params.BuildInfo.Version, eCfg.Timeout)
 	if err != nil {
 		return nil, err
 	}
