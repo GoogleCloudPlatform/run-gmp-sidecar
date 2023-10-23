@@ -15,38 +15,59 @@
 package main
 
 import (
+	"context"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
+
+	"github.com/GoogleCloudPlatform/run-gmp-sidecar/confgenerator"
 )
 
 // Create channel to listen for signals.
 var signalChan chan (os.Signal) = make(chan os.Signal, 1)
+var userConfigFile = "/etc/rungmp/config.yml"
+var otelConfigFile = "/run/rungmp/otel.yml"
 
 func main() {
 	// SIGINT handles Ctrl+C locally.
 	// SIGTERM handles Cloud Run termination signal.
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+	ctx := context.Background()
 
-	// 1. Pick up RunMonitoring configuration from mounted volume that
-	// is tied to secret manager.
-	// TODO(b/293137197)
+	// Pick up RunMonitoring configuration from mounted volume that is tied to
+	// secret manager.  Translate it from RunMonitoring to OTel.
+	c, err := confgenerator.ReadConfigFromFile(ctx, userConfigFile)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// 2. Translate from RunMonitoring to OTel.
-	// TODO(b/293137197)
+	// Create the OTel config and write it to disk
+	otel, err := c.GenerateOtelConfig(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Dir(otelConfigFile), 0755); err != nil {
+		log.Fatalf("failed to create directory for %q: %v", otelConfigFile, err)
+	}
+	if err := ioutil.WriteFile(otelConfigFile, []byte(otel), 0644); err != nil {
+		log.Fatalf("failed to write file to %q: %v", otelConfigFile, err)
+	}
 
-	// 3. Spin up new-subprocess that runs the OTel collector and store the PID.
+	// Spin up new-subprocess that runs the OTel collector and store the PID.
+	// This OTel collector should use the generated config.
 	var procAttr os.ProcAttr
 	procAttr.Files = []*os.File{nil, /* stdin is not needed for the collector */
 		os.Stdout, os.Stderr}
-	collectorProcess, err := os.StartProcess("./rungmpcol", []string{"./rungmpcol", "--config", "/etc/rungmp/config.yml"}, &procAttr)
+	collectorProcess, err := os.StartProcess("./rungmpcol", []string{"./rungmpcol", "--config", otelConfigFile}, &procAttr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Printf("entrypoint: started OTel successfully")
 
-	// 4. Wait for signals from Cloud Run. Signal the sub process appropriately
+	// Wait for signals from Cloud Run. Signal the sub process appropriately
 	// after making relevant changes to the config and/or health signals.
 	// TODO(b/307317433): Consider having a timeout to shutdown the subprocess
 	// non-gracefully.

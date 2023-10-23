@@ -49,7 +49,7 @@ Because this sample requires `docker` or similar container build system for Linu
 gcloud services enable cloudbuild.googleapis.com --quiet
 ```
 
-The bundled configuration file for Cloud Build (`cloudbuild.yaml`) requires a new servcie account with the following roles or stronger:
+The bundled configuration file for Cloud Build (`cloudbuild.yaml`) requires a new service account with the following roles or stronger:
 
 * `roles/iam.serviceAccountUser`
 * `roles/storage.objectViewer`
@@ -82,6 +82,7 @@ commands:
 
 ```
 export GCP_PROJECT=<project-id>
+export RUN_GMP_CONFIG=run-gmp-config
 gcloud artifacts repositories create run-gmp \
     --repository-format=docker \
     --location=us-east1
@@ -116,6 +117,15 @@ docker build -t us-east1-docker.pkg.dev/$GCP_PROJECT/run-gmp/collector .
 docker push us-east1-docker.pkg.dev/$GCP_PROJECT/run-gmp/collector
 ```
 
+#### Create RunMonitoring config and store as a secret
+
+Create a `RunMonitoring` config and store it in secret manager. In this example, we use
+`run-gmp-config` as the secret name.
+
+```
+gcloud secrets create ${RUN_GMP_CONFIG}  --data-file=default-config.yaml
+```
+
 ##### Create the Cloud Run Service
 
 The `run-service.yaml` file defines a multicontainer Cloud Run Service with the
@@ -127,6 +137,8 @@ Replace the `%SAMPLE_APP_IMAGE%` and `%OTELCOL_IMAGE%` placeholders in
 ```
 sed -i s@%OTELCOL_IMAGE%@us-east1-docker.pkg.dev/${GCP_PROJECT}/run-gmp/collector@g run-service.yaml
 sed -i s@%SAMPLE_APP_IMAGE%@us-east1-docker.pkg.dev/${GCP_PROJECT}/run-gmp/sample-app@g run-service.yaml
+sed -i s@%PROJECT%@${GCP_PROJECT}@g run-service.yaml
+sed -i s@%SECRET%@${RUN_GMP_CONFIG}@g run-service.yaml
 ```
 
 Create the Service with the following command:
@@ -166,8 +178,5 @@ User request received!
 After running the demo, please make sure to clean up your project so that you don't consume unexpected resources and get charged.
 
 ```console
-gcloud run services delete run-gmp-sidecar-service --region us-east1 --quiet
-gcloud artifacts repositories delete run-gmp \
-  --location=us-east1 \
-  --quiet
+./clean-up-cloud-run.sh
 ```

@@ -45,6 +45,16 @@ gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
   --role="roles/artifactregistry.createOnPushWriter" \
   --quiet
 
+gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
+  --member="serviceAccount:${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --role="roles/secretmanager.admin" \
+  --quiet
+
+gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
+  --member="serviceAccount:${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor" \
+  --quiet
+
 # In order to change policy of the run service, it requires 'run.services.setIamPolicy',
 # which is contained in run.admin role
 gcloud projects add-iam-policy-binding "${PROJECT_ID}" \

@@ -105,11 +105,11 @@ func main() {
 	promMux.Handle("/metrics", promhttp.Handler())
 
 	mainSrv := http.Server{
-		Addr:    ":8080",
+		Addr:    ":8000",
 		Handler: entrypointMux,
 	}
 	promSrv := http.Server{
-		Addr:    ":8000",
+		Addr:    ":8080",
 		Handler: promMux,
 	}
 

@@ -19,6 +19,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbyattrsprocessor"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/metricstransformprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
@@ -84,6 +85,7 @@ func components() (otelcol.Factories, error) {
 	processors := []processor.Factory{
 		filterprocessor.NewFactory(),
 		resourcedetectionprocessor.NewFactory(),
+		metricstransformprocessor.NewFactory(),
 		resourceprocessor.NewFactory(),
 		transformprocessor.NewFactory(),
 		groupbyattrsprocessor.NewFactory(),

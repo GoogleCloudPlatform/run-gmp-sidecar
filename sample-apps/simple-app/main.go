@@ -77,8 +77,8 @@ func main() {
 	promMux.Handle("/metrics", promhttp.Handler())
 
 	go func() {
-		http.ListenAndServe(":8080", entrypointMux)
+		http.ListenAndServe(":8000", entrypointMux)
 	}()
 
-	http.ListenAndServe(":8000", promMux)
+	http.ListenAndServe(":8080", promMux)
 }

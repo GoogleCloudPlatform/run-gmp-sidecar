@@ -35,15 +35,26 @@ steps:
     waitFor:
       - BUILD_COLLECTOR
 
+  - name: "gcr.io/cloud-builders/gcloud"
+    args: ["secrets", "create", "${_RUN_GMP_CONFIG}", "--data-file=default-config.yaml"]
+    id: CREATE_SECRET
+    waitFor:
+      - PUSH_COLLECTOR
+
   - name: "ubuntu"
     env:
       - "IMAGE_APP=${_IMAGE_APP}"
       - "IMAGE_COLLECTOR=${_IMAGE_COLLECTOR}"
+      - "SECRET=${_RUN_GMP_CONFIG}"
+      - "PROJECT=${_GCP_PROJECT}"
     script: |
       sed -i s@%OTELCOL_IMAGE%@${IMAGE_COLLECTOR}@g run-service.yaml
       sed -i s@%SAMPLE_APP_IMAGE%@${IMAGE_APP}@g run-service.yaml
+      sed -i s@%SECRET%@${SECRET}@g run-service.yaml
+      sed -i s@%PROJECT%@${PROJECT}@g run-service.yaml
     id: REPLACE_YAML_VALUE
-    waitFor: ["-"]
+    waitFor:
+      - CREATE_SECRET
 
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
     entrypoint: gcloud
@@ -81,9 +92,11 @@ steps:
 
 substitutions:
   _REGION: us-east1
-  _REGISTRY: ${_REGION}-docker.pkg.dev/${PROJECT_ID}/run-gmp
+  _GCP_PROJECT: ${PROJECT_ID}
+  _REGISTRY: ${_REGION}-docker.pkg.dev/${_GCP_PROJECT}/run-gmp
   _IMAGE_APP: ${_REGISTRY}/sample-app
   _IMAGE_COLLECTOR: ${_REGISTRY}/collector
+  _RUN_GMP_CONFIG: run-gmp-config
   _SA_NAME: run-gmp-sa
 
 images:
@@ -97,7 +110,7 @@ images:
 # * roles/logging.logWriter
 # * roles/artifactregistry.createOnPushWriter
 # * roles/run.admin
-serviceAccount: "projects/${PROJECT_ID}/serviceAccounts/${_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
+serviceAccount: "projects/${_GCP_PROJECT}/serviceAccounts/${_SA_NAME}@${_GCP_PROJECT}.iam.gserviceaccount.com"
 
 options:
   dynamic_substitutions: true

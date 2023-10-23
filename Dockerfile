@@ -13,6 +13,5 @@ FROM alpine:3
 RUN apk add --no-cache ca-certificates
 COPY --from=builder /sidecar/bin/rungmpcol /rungmpcol
 COPY --from=builder /sidecar/bin/run-gmp-entrypoint /run-gmp-entrypoint
-COPY collector-config.yaml /etc/rungmp/config.yml
 
 ENTRYPOINT ["/run-gmp-entrypoint"]
