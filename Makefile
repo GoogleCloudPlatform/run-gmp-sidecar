@@ -8,10 +8,12 @@ ALL_SRC := $(shell find . -name '*.go' -type f | sort)
 ALL_DOC := $(shell find . \( -name "*.md" -o -name "*.yaml" \) -type f | sort)
 GIT_SHA := $(shell git rev-parse --short HEAD)
 
-BUILD_INFO_IMPORT_PATH := collector/internal/version
+BUILD_INFO_IMPORT_PATH := github.com/GoogleCloudPlatform/run-gmp-sidecar/collector/internal/version
+ENTRYPOINT_BUILD_INFO_IMPORT_PATH := github.com/GoogleCloudPlatform/run-gmp-sidecar/confgenerator
 BUILD_X1 := -X $(BUILD_INFO_IMPORT_PATH).GitHash=$(GIT_SHA)
 BUILD_X2 := -X $(BUILD_INFO_IMPORT_PATH).Version=$(PKG_VERSION)
-LD_FLAGS := -ldflags "${BUILD_X1} ${BUILD_X2}"
+BUILD_X3 := -X $(ENTRYPOINT_BUILD_INFO_IMPORT_PATH).Version=$(PKG_VERSION)
+LD_FLAGS := -ldflags "${BUILD_X1} ${BUILD_X2} ${BUILD_X3}"
 
 TOOLS_DIR := internal/tools
 
@@ -111,7 +113,7 @@ build-collector-full-name:
 ENTRYPOINT_BINARY = run-gmp-entrypoint
 .PHONY: build-run-gmp-entrypoint
 build-run-gmp-entrypoint:
-	CGO_ENABLED=0 go build -tags=$(GO_BUILD_TAGS) -o ./bin/$(ENTRYPOINT_BINARY) -buildvcs=false entrypoint.go
+	CGO_ENABLED=0 go build -tags=$(GO_BUILD_TAGS) -o ./bin/$(ENTRYPOINT_BINARY) $(LD_FLAGS) -buildvcs=false entrypoint.go
 
 .PHONY: build
 build:

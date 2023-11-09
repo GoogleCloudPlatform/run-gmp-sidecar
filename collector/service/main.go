@@ -40,8 +40,8 @@ func MainContext(ctx context.Context) {
 	}
 
 	info := component.BuildInfo{
-		Command:     "google-cloud-metrics-agent",
-		Description: "Google Cloud Metrics Agent",
+		Command:     "run-gmp-sidecar",
+		Description: "Google Cloud Run GMP Sidecar",
 		Version:     version.Version,
 	}
 
