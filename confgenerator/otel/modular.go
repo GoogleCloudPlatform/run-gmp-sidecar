@@ -90,12 +90,9 @@ func (c ModularConfig) Generate() (string, error) {
 		processors["resourcedetection"] = GCPResourceDetector().Config
 		processorNames = append(processorNames, "resourcedetection")
 
-		// Add serverless ID detector
-		processors["resource/serverless"] = AddResourceAttr("service.instance.id", "faas.id").Config
-		processorNames = append(processorNames, "resource/serverless")
-
 		// Add the serverless instance id as a metric label
-		transformProcessor := TransformationMetrics(FlattenResourceAttribute("faas.id", "cloud_run_instance"))
+		transformProcessor := TransformationMetrics(FlattenResourceAttribute("faas.id", "cloud_run_instance"), PrefixResourceAttribute("service.instance.id", "cloud_run_instance", ":"))
+
 		processors["transform/instance"] = transformProcessor.Config
 		processorNames = append(processorNames, "transform/instance")
 

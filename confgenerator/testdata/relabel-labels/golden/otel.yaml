@@ -18,7 +18,10 @@ processors:
     keys:
     - namespace
     - cluster
-    - location
+  groupbyattrs/run-gmp-self-metrics_3:
+    keys:
+    - namespace
+    - cluster
   metricstransform/run-gmp-self-metrics_1:
     transforms:
     - action: update
@@ -61,11 +64,6 @@ processors:
         aggregation_type: sum
         label_set:
         - status
-  resource/serverless:
-    attributes:
-      action: insert
-      from_attribute: faas.id
-      key: service.instance.id
   resourcedetection:
     detectors:
     - gcp
@@ -75,6 +73,14 @@ processors:
       context: datapoint
       statements:
       - set(attributes["cloud_run_instance"], resource.attributes["faas.id"])
+      - replace_pattern(resource.attributes["service.instance.id"], "^(\\d+)$$", Concat([attributes["cloud_run_instance"],
+        "$$1"], ":"))
+  transform/run-gmp-self-metrics_2:
+    metric_statements:
+      context: datapoint
+      statements:
+      - set(attributes["namespace"], "test_service")
+      - set(attributes["cluster"], "__run__")
 receivers:
   prometheus/application-metrics:
     allow_cumulative_resets: true
@@ -110,11 +116,11 @@ receivers:
           action: replace
         - source_labels: [__address__]
           target_label: instance
-          replacement: test_revision:8080
+          replacement: "8080"
           action: replace
         metric_relabel_configs:
         - source_labels: [some_label]
-          target_label: instance
+          target_label: target_label
           action: replace
         static_configs:
         - targets:
@@ -126,6 +132,12 @@ receivers:
     config:
       scrape_configs:
       - job_name: run-gmp-sidecar
+        metric_relabel_configs:
+        - action: replace
+          replacement: "42"
+          source_labels:
+          - __address__
+          target_label: instance
         scrape_interval: 1m
         static_configs:
         - targets:
@@ -138,7 +150,6 @@ service:
       processors:
       - groupbyattrs/application-metrics_0
       - resourcedetection
-      - resource/serverless
       - transform/instance
       receivers:
       - prometheus/application-metrics
@@ -148,8 +159,9 @@ service:
       processors:
       - filter/run-gmp-self-metrics_0
       - metricstransform/run-gmp-self-metrics_1
+      - transform/run-gmp-self-metrics_2
+      - groupbyattrs/run-gmp-self-metrics_3
       - resourcedetection
-      - resource/serverless
       - transform/instance
       receivers:
       - prometheus/run-gmp-self-metrics

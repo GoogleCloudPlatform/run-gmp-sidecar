@@ -45,6 +45,7 @@ func (rc *RunMonitoringConfig) GenerateOtelConfig(ctx context.Context) (string, 
 	receiverPipelines["run-gmp-self-metrics"] = AgentSelfMetrics{
 		Version: metricVersionLabel,
 		Port:    selfMetricsPort,
+		Service: rc.Env.Service,
 	}.OTelReceiverPipeline()
 
 	otelConfig, err := otel.ModularConfig{

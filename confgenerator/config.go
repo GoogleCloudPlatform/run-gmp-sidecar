@@ -120,15 +120,17 @@ type ScrapeLimits struct {
 
 var allowedTargetMetadata = []string{"revision", "service", "configuration"}
 
+const kind = "RunMonitoring"
+const apiVersion = "monitoring.googleapis.com/v1beta"
+
 // DefaultRunMonitoringConfig creates a config that will be used by default if
 // no user config (or an empty one) is found. It scrapes the default location of
 // 0.0.0.0:8080/metrics for prometheus metrics.
 func DefaultRunMonitoringConfig() *RunMonitoringConfig {
-
 	return &RunMonitoringConfig{
 		metav1.TypeMeta{
-			Kind:       "RunMonitoring",
-			APIVersion: "monitoring.googleapis.com/v1beta",
+			Kind:       kind,
+			APIVersion: apiVersion,
 		},
 		metav1.ObjectMeta{
 			Name: "run-gmp-sidecar",
@@ -176,6 +178,10 @@ func ReadConfigFromFile(ctx context.Context, path string) (*RunMonitoringConfig,
 		return nil, err
 	}
 
+	// Validate the RunMonitoring config
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
 	return config, nil
 }
 
@@ -201,6 +207,18 @@ func (rc *RunMonitoringConfig) OTelReceiverPipeline() (*otel.ReceiverPipeline, e
 		},
 		Processors: []otel.Component{otel.GroupByGMPAttrs()},
 	}, nil
+}
+
+// Validate validates the RunMonitoring config.
+func (rc *RunMonitoringConfig) Validate() error {
+	if rc.APIVersion != apiVersion {
+		return fmt.Errorf("apiVersion must be %s", apiVersion)
+	}
+	if rc.Kind != kind {
+		return fmt.Errorf("kind must be %s", kind)
+	}
+
+	return nil
 }
 
 // scrapeConfigs converts the given RunMonitoringConfig to an equivalent set of Prometheus ScrapeConfigs.
@@ -292,11 +310,17 @@ func endpointScrapeConfig(id string, ep ScrapeEndpoint, relabelCfgs []*relabel.C
 			TargetLabel:  "namespace",
 			Replacement:  env.Service,
 		},
+		// The `instance` label will be <faas.id>:<port> in the final metric.
+		// But since <faas.id> is unavailable until the gcp resource detector
+		// runs later in the pipeline we just populate the port for now.
+		//
+		// See the usage of PrefixResourceAttribute for when the rest of the
+		// instance label is filled in.
 		&relabel.Config{
 			Action:       relabel.Replace,
 			SourceLabels: prommodel.LabelNames{"__address__"},
 			TargetLabel:  "instance",
-			Replacement:  env.Revision + ":" + ep.Port,
+			Replacement:  ep.Port,
 		},
 	)
 

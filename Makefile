@@ -128,6 +128,10 @@ test:
 test_verbose:
 	$(MAKE) GO_TEST_VERBOSE=-v test
 
+.PHONY: test_update
+test_update:
+	go test ./confgenerator -update
+
 .PHONY: generate
 generate:
 	go generate ./...

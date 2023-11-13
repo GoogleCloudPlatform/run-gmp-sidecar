@@ -103,15 +103,22 @@ func AggregateLabels(aggregationType string, labels ...string) map[string]interf
 	}
 }
 
-// GroupByGMPAttrs moves the "namespace", "cluster", and "location"
-// metric attributes to resource attributes. The
-// googlemanagedprometheus exporter will use these resource attributes
-// to populate metric labels.
+// GroupByGMPAttrs moves the "namespace" and "cluster" metric attributes to
+// resource attributes.
+//
+// Metrics coming from run-gmp-sidecar are written against the
+// `prometheus_target` monitored resource in Cloud Monitoring. The labels for
+// these monitored resources come from the OTel resource labels. As a result,
+// this processor needs to promote certain metric labels to resource labels so
+// the translation can happen correctly.
+//
+// See https://cloud.google.com/monitoring/api/resources#tag_prometheus_target
+// for more information about the monitored resource used.
 func GroupByGMPAttrs() Component {
 	return Component{
 		Type: "groupbyattrs",
 		Config: map[string]interface{}{
-			"keys": []string{"namespace", "cluster", "location"},
+			"keys": []string{"namespace", "cluster"},
 		},
 	}
 }
@@ -170,4 +177,20 @@ type TransformQuery string
 // metric attribute.
 func FlattenResourceAttribute(resourceAttribute, metricAttribute string) TransformQuery {
 	return TransformQuery(fmt.Sprintf(`set(attributes["%s"], resource.attributes["%s"])`, metricAttribute, resourceAttribute))
+}
+
+// PrefixResourceAttribute prefixes the resource attribute with another metric
+// attribute.
+//
+// Note: Mutating the resource attribute results in this update happening for
+// each data point.  Since the OTTL statement uses the resource attribute in
+// both the target and the source labels, we must make sure after the first
+// mutation, the subsequent transformations for the same resource is a no-op.
+func PrefixResourceAttribute(resourceAttribute, metricAttribute, delimiter string) TransformQuery {
+	return TransformQuery(fmt.Sprintf(`replace_pattern(resource.attributes["%s"], "^(\\d+)$$", Concat([attributes["%s"], "$$1"], "%s"))`, resourceAttribute, metricAttribute, delimiter))
+}
+
+// AddMetricLabel adds a new metric attribute. If it already exists, then it is overwritten.
+func AddMetricLabel(key, val string) TransformQuery {
+	return TransformQuery(fmt.Sprintf(`set(attributes["%s"], "%s")`, key, val))
 }

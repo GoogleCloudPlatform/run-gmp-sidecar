@@ -22,6 +22,7 @@ import (
 
 type AgentSelfMetrics struct {
 	Version string
+	Service string
 	Port    int
 }
 
@@ -36,6 +37,12 @@ func (r AgentSelfMetrics) OTelReceiverPipeline() otel.ReceiverPipeline {
 						"scrape_interval": "1m",
 						"static_configs": []map[string]interface{}{{
 							"targets": []string{fmt.Sprintf("0.0.0.0:%d", r.Port)},
+						}},
+						"metric_relabel_configs": []map[string]interface{}{{
+							"source_labels": []string{"__address__"},
+							"target_label":  "instance",
+							"replacement":   fmt.Sprintf("%d", r.Port),
+							"action":        "replace",
 						}},
 					}},
 				},
@@ -81,6 +88,8 @@ func (r AgentSelfMetrics) OTelReceiverPipeline() otel.ReceiverPipeline {
 					otel.AggregateLabels("sum", "status"),
 				),
 			),
+			otel.TransformationMetrics(otel.AddMetricLabel("namespace", r.Service), otel.AddMetricLabel("cluster", "__run__")),
+			otel.GroupByGMPAttrs(),
 		},
 	}
 }

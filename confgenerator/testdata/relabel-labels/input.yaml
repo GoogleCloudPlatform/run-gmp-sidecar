@@ -27,4 +27,4 @@ spec:
     - action: replace
       sourceLabels:
       - some_label
-      targetLabel: instance
+      targetLabel: target_label
