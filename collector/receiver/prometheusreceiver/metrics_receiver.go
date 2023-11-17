@@ -249,7 +249,7 @@ func (r *pReceiver) applyCfg(cfg *config.Config) error {
 }
 
 func (r *pReceiver) initPrometheusComponents(ctx context.Context, host component.Host, logger log.Logger) error {
-	r.discoveryManager = discovery.NewManager(ctx, logger)
+	r.discoveryManager = discovery.NewManager(ctx, logger, discovery.SkipInitialWait())
 
 	go func() {
 		r.settings.Logger.Info("Starting discovery manager")
@@ -287,7 +287,7 @@ func (r *pReceiver) initPrometheusComponents(ctx context.Context, host component
 
 	// For the sidecar, use a 10s offset from the start before scraping the targets.
 	tenSecondOffSet := 10 * time.Second
-	r.scrapeManager = scrape.NewManager(&scrape.Options{PassMetadataInContext: true, InitialScrapeOffset: &tenSecondOffSet}, logger, store)
+	r.scrapeManager = scrape.NewManager(&scrape.Options{PassMetadataInContext: true, InitialScrapeOffset: &tenSecondOffSet, DiscoveryReloadOnStartup: true}, logger, store)
 
 	go func() {
 		// The scrape manager needs to wait for the configuration to be loaded before beginning

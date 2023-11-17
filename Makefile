@@ -122,7 +122,8 @@ build:
 
 .PHONY: test
 test:
-	go test -tags=$(GO_BUILD_TAGS) $(GO_TEST_VERBOSE) -race ./...
+	$(MAKE) build-collector
+	go test -tags=$(GO_BUILD_TAGS) $(GO_TEST_VERBOSE) -p 1 -race ./...
 
 .PHONY: test_quiet
 test_verbose:
