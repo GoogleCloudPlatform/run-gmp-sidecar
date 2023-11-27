@@ -1,5 +1,7 @@
 exporters:
   googlemanagedprometheus:
+    metric:
+      add_metric_suffixes: false
     retry_on_failure:
       enabled: false
     untyped_double_export: true

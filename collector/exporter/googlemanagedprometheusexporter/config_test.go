@@ -15,6 +15,7 @@ import (
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 	"go.opentelemetry.io/collector/otelcol/otelcoltest"
 
+	"github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/collector/googlemanagedprometheus"
 	"github.com/GoogleCloudPlatform/run-gmp-sidecar/collector/exporter/googlemanagedprometheusexporter/internal/metadata"
 )
 
@@ -29,7 +30,7 @@ func TestLoadConfig(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	assert.Equal(t, len(cfg.Exporters), 3)
+	assert.Equal(t, len(cfg.Exporters), 2)
 
 	r0 := cfg.Exporters[component.NewID(metadata.Type)].(*Config)
 	assert.Equal(t, r0, factory.CreateDefaultConfig().(*Config))
@@ -43,6 +44,16 @@ func TestLoadConfig(t *testing.T) {
 			GMPConfig: GMPConfig{
 				ProjectID: "my-project",
 				UserAgent: "opentelemetry-collector-contrib {{version}}",
+				MetricConfig: MetricConfig{
+					Config: googlemanagedprometheus.Config{
+						AddMetricSuffixes: false,
+						ExtraMetricsConfig: googlemanagedprometheus.ExtraMetricsConfig{
+							EnableTargetInfo: false,
+							EnableScopeInfo:  false,
+						},
+					},
+					Prefix: "my-metric-domain.com",
+				},
 			},
 			RetrySettings: exporterhelper.RetrySettings{
 				Enabled:             true,
@@ -58,9 +69,4 @@ func TestLoadConfig(t *testing.T) {
 				QueueSize:    10,
 			},
 		})
-
-	r2 := cfg.Exporters[component.NewIDWithName(metadata.Type, "customprefix")].(*Config)
-	r2Expected := factory.CreateDefaultConfig().(*Config)
-	r2Expected.GMPConfig.MetricConfig.Prefix = "my-metric-domain.com"
-	assert.Equal(t, r2, r2Expected)
 }

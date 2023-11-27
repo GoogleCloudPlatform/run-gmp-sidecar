@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/collector"
+	"github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/collector/googlemanagedprometheus"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
@@ -38,6 +39,11 @@ func createDefaultConfig() component.Config {
 		TimeoutSettings: exporterhelper.TimeoutSettings{Timeout: defaultTimeout},
 		RetrySettings:   retrySettings,
 		QueueSettings:   exporterhelper.NewDefaultQueueSettings(),
+		GMPConfig: GMPConfig{
+			MetricConfig: MetricConfig{
+				Config: googlemanagedprometheus.DefaultConfig(),
+			},
+		},
 	}
 }
 
@@ -49,7 +55,10 @@ func createMetricsExporter(
 	eCfg := cfg.(*Config)
 
 	// We turn off normalization for serverless environments.
-	collectorConfig := eCfg.GMPConfig.toCollectorConfig()
+	collectorConfig, err := eCfg.GMPConfig.toCollectorConfig()
+	if err != nil {
+		return nil, err
+	}
 	collectorConfig.MetricConfig.CumulativeNormalization = false
 	mExp, err := collector.NewGoogleCloudMetricsExporter(ctx, collectorConfig, params.TelemetrySettings.Logger, params.BuildInfo.Version, eCfg.Timeout)
 	if err != nil {

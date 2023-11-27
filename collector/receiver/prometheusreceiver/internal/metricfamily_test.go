@@ -24,12 +24,9 @@ import (
 	"github.com/prometheus/prometheus/model/value"
 	"github.com/prometheus/prometheus/scrape"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/collector/featuregate"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"
-
-	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/prometheus"
 )
 
 type testMetadataStore map[string]scrape.MetricMetadata
@@ -263,7 +260,7 @@ func TestMetricGroupData_toDistributionUnitTest(t *testing.T) {
 			require.Len(t, mp.groups, 1)
 
 			sl := pmetric.NewMetricSlice()
-			mp.appendMetric(sl, prometheus.NewNormalizer(featuregate.GlobalRegistry()))
+			mp.appendMetric(sl, false)
 
 			require.Equal(t, 1, sl.Len(), "Exactly one metric expected")
 			metric := sl.At(0)
@@ -551,7 +548,7 @@ func TestMetricGroupData_toSummaryUnitTest(t *testing.T) {
 			require.Len(t, mp.groups, 1)
 
 			sl := pmetric.NewMetricSlice()
-			mp.appendMetric(sl, prometheus.NewNormalizer(featuregate.GlobalRegistry()))
+			mp.appendMetric(sl, false)
 
 			require.Equal(t, 1, sl.Len(), "Exactly one metric expected")
 			metric := sl.At(0)
@@ -657,7 +654,7 @@ func TestMetricGroupData_toNumberDataUnitTest(t *testing.T) {
 			require.Len(t, mp.groups, 1)
 
 			sl := pmetric.NewMetricSlice()
-			mp.appendMetric(sl, prometheus.NewNormalizer(featuregate.GlobalRegistry()))
+			mp.appendMetric(sl, false)
 
 			require.Equal(t, 1, sl.Len(), "Exactly one metric expected")
 			metric := sl.At(0)

@@ -78,9 +78,10 @@ type MetricAdjusterOpts struct {
 
 // Config defines configuration for Prometheus receiver.
 type Config struct {
-	PrometheusConfig *promconfig.Config `mapstructure:"-"`
-	BufferPeriod     time.Duration      `mapstructure:"buffer_period"`
-	BufferCount      int                `mapstructure:"buffer_count"`
+	PrometheusConfig   *promconfig.Config `mapstructure:"-"`
+	TrimMetricSuffixes bool               `mapstructure:"trim_metric_suffixes"`
+	BufferPeriod       time.Duration      `mapstructure:"buffer_period"`
+	BufferCount        int                `mapstructure:"buffer_count"`
 
 	// PreserveUntyped is a setting that lets the collector preserve the untypedness of
 	// untyped metrics as a metric attribute. If set, all untyped prometheus metrics from

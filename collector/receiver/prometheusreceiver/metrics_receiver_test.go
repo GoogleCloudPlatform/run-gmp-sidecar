@@ -23,7 +23,6 @@ import (
 	"github.com/prometheus/common/model"
 	promConfig "github.com/prometheus/prometheus/config"
 	"github.com/stretchr/testify/assert"
-	"go.opentelemetry.io/collector/featuregate"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -1278,7 +1277,7 @@ func TestCoreMetricsEndToEnd(t *testing.T) {
 			validateScrapes: true,
 		},
 	}
-	testComponent(t, targets, false, "", featuregate.GlobalRegistry())
+	testComponent(t, targets, false, "", false)
 }
 
 var startTimeMetricPage = `
@@ -1364,7 +1363,7 @@ func TestStartTimeMetric(t *testing.T) {
 			validateFunc: verifyStartTimeMetricPage,
 		},
 	}
-	testComponent(t, targets, true, "", featuregate.GlobalRegistry())
+	testComponent(t, targets, true, "", false)
 }
 
 var startTimeMetricRegexPage = `
@@ -1413,7 +1412,7 @@ func TestStartTimeMetricRegex(t *testing.T) {
 			validateFunc: verifyStartTimeMetricPage,
 		},
 	}
-	testComponent(t, targets, true, "^(.+_)*process_start_time_seconds$", featuregate.GlobalRegistry())
+	testComponent(t, targets, true, "^(.+_)*process_start_time_seconds$", false)
 }
 
 // metric type is defined as 'untyped' in the first metric
@@ -1442,7 +1441,7 @@ func TestUntypedMetrics(t *testing.T) {
 		},
 	}
 
-	testComponent(t, targets, false, "", featuregate.GlobalRegistry())
+	testComponent(t, targets, false, "", false)
 
 }
 
