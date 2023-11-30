@@ -16,11 +16,11 @@ processors:
         - otelcol_process_memory_rss
         - otelcol_grpc_io_client_completed_rpcs
         - otelcol_googlecloudmonitoring_point_count
-  groupbyattrs/application-metrics_0:
+  groupbyattrs/application-metrics_3:
     keys:
     - namespace
     - cluster
-  groupbyattrs/run-gmp-self-metrics_3:
+  groupbyattrs/run-gmp-self-metrics_4:
     keys:
     - namespace
     - cluster
@@ -66,23 +66,33 @@ processors:
         aggregation_type: sum
         label_set:
         - status
-  resourcedetection:
+  resourcedetection/application-metrics_0:
     detectors:
     - gcp
     - env
-  transform/instance:
+  resourcedetection/run-gmp-self-metrics_2:
+    detectors:
+    - gcp
+    - env
+  transform/application-metrics_1:
     metric_statements:
       context: datapoint
       statements:
-      - set(attributes["cloud_run_instance"], resource.attributes["faas.id"])
-      - replace_pattern(resource.attributes["service.instance.id"], "^(\\d+)$$", Concat([attributes["cloud_run_instance"],
+      - replace_pattern(resource.attributes["service.instance.id"], "^(\\d+)$$", Concat([resource.attributes["faas.id"],
         "$$1"], ":"))
-  transform/run-gmp-self-metrics_2:
+  transform/application-metrics_2:
+    metric_statements:
+      context: datapoint
+      statements:
+      - set(attributes["instanceId"], resource.attributes["faas.id"])
+  transform/run-gmp-self-metrics_3:
     metric_statements:
       context: datapoint
       statements:
       - set(attributes["namespace"], "test_service")
       - set(attributes["cluster"], "__run__")
+      - replace_pattern(resource.attributes["service.instance.id"], "^(\\d+)$$", Concat([resource.attributes["faas.id"],
+        "$$1"], ":"))
 receivers:
   prometheus/application-metrics:
     allow_cumulative_resets: true
@@ -97,15 +107,15 @@ receivers:
         enable_http2: false
         relabel_configs:
         - source_labels: [__address__]
-          target_label: cloud_run_service
+          target_label: service_name
           replacement: test_service
           action: replace
         - source_labels: [__address__]
-          target_label: cloud_run_revision
+          target_label: revision_name
           replacement: test_revision
           action: replace
         - source_labels: [__address__]
-          target_label: cloud_run_configuration
+          target_label: configuration_name
           replacement: test_configuration
           action: replace
         - source_labels: [__address__]
@@ -146,9 +156,10 @@ service:
       exporters:
       - googlemanagedprometheus
       processors:
-      - groupbyattrs/application-metrics_0
-      - resourcedetection
-      - transform/instance
+      - resourcedetection/application-metrics_0
+      - transform/application-metrics_1
+      - transform/application-metrics_2
+      - groupbyattrs/application-metrics_3
       receivers:
       - prometheus/application-metrics
     metrics/run-gmp-self-metrics:
@@ -157,10 +168,9 @@ service:
       processors:
       - filter/run-gmp-self-metrics_0
       - metricstransform/run-gmp-self-metrics_1
-      - transform/run-gmp-self-metrics_2
-      - groupbyattrs/run-gmp-self-metrics_3
-      - resourcedetection
-      - transform/instance
+      - resourcedetection/run-gmp-self-metrics_2
+      - transform/run-gmp-self-metrics_3
+      - groupbyattrs/run-gmp-self-metrics_4
       receivers:
       - prometheus/run-gmp-self-metrics
   telemetry:

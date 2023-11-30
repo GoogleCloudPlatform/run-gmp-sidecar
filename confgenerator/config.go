@@ -78,7 +78,7 @@ type ScrapeEndpoint struct {
 	Timeout string `yaml:"timeout,omitempty"`
 	// Relabeling rules for metrics scraped from this endpoint. Relabeling rules
 	// that override protected target labels (project_id, location, cluster,
-	// namespace, job, cloud_run_instance, or __address__) are not permitted.
+	// namespace, job, instance, instanceId or __address__) are not permitted.
 	MetricRelabeling []RelabelingRule `yaml:"metricRelabeling,omitempty"`
 }
 
@@ -118,10 +118,19 @@ type ScrapeLimits struct {
 	LabelValueLength uint64 `yaml:"labelValueLength,omitempty"`
 }
 
-var allowedTargetMetadata = []string{"revision", "service", "configuration"}
+var allowedTargetMetadata = []string{"instance", "revision", "service", "configuration"}
 
-const kind = "RunMonitoring"
-const apiVersion = "monitoring.googleapis.com/v1beta"
+const (
+	kind       = "RunMonitoring"
+	apiVersion = "monitoring.googleapis.com/v1beta"
+
+	// Metric labels names that will be added to metrics based on the RunTargetLabels.Metadata
+	// configuration.
+	cloudRunInstanceLabel      = "instanceId"
+	cloudRunServiceLabel       = "service_name"
+	cloudRunRevisionLabel      = "revision_name"
+	cloudRunConfigurationLabel = "configuration_name"
+)
 
 // DefaultRunMonitoringConfig creates a config that will be used by default if
 // no user config (or an empty one) is found. It scrapes the default location of
@@ -192,6 +201,21 @@ func (rc *RunMonitoringConfig) OTelReceiverPipeline() (*otel.ReceiverPipeline, e
 	if err != nil {
 		return nil, err
 	}
+
+	// Prefix the `instance` resource label with the faas.id.
+	processors := []otel.Component{
+		otel.GCPResourceDetector(),
+		otel.TransformationMetrics(otel.PrefixResourceAttribute("service.instance.id", "faas.id", ":")),
+	}
+
+	// If the users configure to add the instance metadata, add it as a metric label.
+	if rc.Spec.TargetLabels.Metadata != nil && contains(*rc.Spec.TargetLabels.Metadata, "instance") {
+		processors = append(processors, otel.TransformationMetrics(otel.FlattenResourceAttribute("faas.id", cloudRunInstanceLabel)))
+	}
+
+	// Group by the GMP attributes.
+	processors = append(processors, otel.GroupByGMPAttrs())
+
 	return &otel.ReceiverPipeline{
 		Receiver: otel.Component{
 			Type: "prometheus",
@@ -205,7 +229,7 @@ func (rc *RunMonitoringConfig) OTelReceiverPipeline() (*otel.ReceiverPipeline, e
 				},
 			},
 		},
-		Processors: []otel.Component{otel.GroupByGMPAttrs()},
+		Processors: processors,
 	}, nil
 }
 
@@ -264,7 +288,7 @@ func relabelingsForMetadata(keys map[string]struct{}, env *CloudRunEnvironment) 
 			Action:       relabel.Replace,
 			SourceLabels: prommodel.LabelNames{"__address__"},
 			Replacement:  env.Service,
-			TargetLabel:  "cloud_run_service",
+			TargetLabel:  cloudRunServiceLabel,
 		})
 	}
 	if _, ok := keys["revision"]; ok {
@@ -272,7 +296,7 @@ func relabelingsForMetadata(keys map[string]struct{}, env *CloudRunEnvironment) 
 			Action:       relabel.Replace,
 			SourceLabels: prommodel.LabelNames{"__address__"},
 			Replacement:  env.Revision,
-			TargetLabel:  "cloud_run_revision",
+			TargetLabel:  cloudRunRevisionLabel,
 		})
 	}
 	if _, ok := keys["configuration"]; ok {
@@ -280,7 +304,7 @@ func relabelingsForMetadata(keys map[string]struct{}, env *CloudRunEnvironment) 
 			Action:       relabel.Replace,
 			SourceLabels: prommodel.LabelNames{"__address__"},
 			Replacement:  env.Configuration,
-			TargetLabel:  "cloud_run_configuration",
+			TargetLabel:  cloudRunConfigurationLabel,
 		})
 	}
 	return res
@@ -390,6 +414,10 @@ func endpointScrapeConfig(id string, ep ScrapeEndpoint, relabelCfgs []*relabel.C
 // convertRelabelingRule converts the rule to a relabel configuration. An error is returned
 // if the rule would modify one of the protected labels.
 func convertRelabelingRule(r RelabelingRule) (*relabel.Config, error) {
+	if contains(r.SourceLabels, cloudRunInstanceLabel) {
+		return nil, fmt.Errorf("cannot relabel with action %q using source label %q", r.Action, cloudRunInstanceLabel)
+	}
+
 	rcfg := &relabel.Config{
 		// Upstream applies ToLower when digesting the config, so we allow the same.
 		Action:      relabel.Action(strings.ToLower(r.Action)),

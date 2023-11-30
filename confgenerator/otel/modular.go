@@ -86,16 +86,6 @@ func (c ModularConfig) Generate() (string, error) {
 		var processorNames []string
 		processorNames = append(processorNames, receiverProcessorNames...)
 
-		// Add the resource detector
-		processors["resourcedetection"] = GCPResourceDetector().Config
-		processorNames = append(processorNames, "resourcedetection")
-
-		// Add the serverless instance id as a metric label
-		transformProcessor := TransformationMetrics(FlattenResourceAttribute("faas.id", "cloud_run_instance"), PrefixResourceAttribute("service.instance.id", "cloud_run_instance", ":"))
-
-		processors["transform/instance"] = transformProcessor.Config
-		processorNames = append(processorNames, "transform/instance")
-
 		exporters["googlemanagedprometheus"] = c.Exporter.Config
 		pipelines["metrics/"+key] = map[string]interface{}{
 			"receivers":  []string{receiverName},

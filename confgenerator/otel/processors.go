@@ -179,15 +179,15 @@ func FlattenResourceAttribute(resourceAttribute, metricAttribute string) Transfo
 	return TransformQuery(fmt.Sprintf(`set(attributes["%s"], resource.attributes["%s"])`, metricAttribute, resourceAttribute))
 }
 
-// PrefixResourceAttribute prefixes the resource attribute with another metric
+// PrefixResourceAttribute prefixes the resource attribute with another resource
 // attribute.
 //
 // Note: Mutating the resource attribute results in this update happening for
 // each data point.  Since the OTTL statement uses the resource attribute in
 // both the target and the source labels, we must make sure after the first
 // mutation, the subsequent transformations for the same resource is a no-op.
-func PrefixResourceAttribute(resourceAttribute, metricAttribute, delimiter string) TransformQuery {
-	return TransformQuery(fmt.Sprintf(`replace_pattern(resource.attributes["%s"], "^(\\d+)$$", Concat([attributes["%s"], "$$1"], "%s"))`, resourceAttribute, metricAttribute, delimiter))
+func PrefixResourceAttribute(destResourceAttribute, srcResourceAttribute, delimiter string) TransformQuery {
+	return TransformQuery(fmt.Sprintf(`replace_pattern(resource.attributes["%s"], "^(\\d+)$$", Concat([resource.attributes["%s"], "$$1"], "%s"))`, destResourceAttribute, srcResourceAttribute, delimiter))
 }
 
 // AddMetricLabel adds a new metric attribute. If it already exists, then it is overwritten.

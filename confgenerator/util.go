@@ -86,7 +86,7 @@ func contains(s []string, str string) bool {
 }
 
 // protectedLabels ensures that none of the monitored resource labels are
-// mutable using relabel configs. We also disallow mutating cloud_run_instance
+// mutable using relabel configs. We also disallow mutating the instanceID
 // as that is a curated label that is added in a processor (later in the
 // pipeline) - so its not available during relabeling in the receiver.
 var protectedLabels = []string{
@@ -96,7 +96,7 @@ var protectedLabels = []string{
 	"namespace",
 	"job",
 	"instance",
-	"cloud_run_instance",
+	cloudRunInstanceLabel,
 	"__address__",
 }
 
