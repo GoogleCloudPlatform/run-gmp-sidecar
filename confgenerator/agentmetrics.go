@@ -33,7 +33,7 @@ func (r AgentSelfMetrics) OTelReceiverPipeline() otel.ReceiverPipeline {
 			Config: map[string]interface{}{
 				"config": map[string]interface{}{
 					"scrape_configs": []map[string]interface{}{{
-						"job_name":        "run-gmp-sidecar",
+						"job_name":        "run-gmp-sidecar-self-metrics",
 						"scrape_interval": "1m",
 						"static_configs": []map[string]interface{}{{
 							"targets": []string{fmt.Sprintf("0.0.0.0:%d", r.Port)},

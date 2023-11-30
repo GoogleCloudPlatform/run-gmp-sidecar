@@ -98,7 +98,7 @@ receivers:
     allow_cumulative_resets: true
     config:
       scrape_configs:
-      - job_name: RunMonitoring/run-gmp-sidecar/8080
+      - job_name: run-gmp-sidecar
         honor_timestamps: false
         scrape_interval: 1m
         scrape_timeout: 1m
@@ -139,7 +139,7 @@ receivers:
   prometheus/run-gmp-self-metrics:
     config:
       scrape_configs:
-      - job_name: run-gmp-sidecar
+      - job_name: run-gmp-sidecar-self-metrics
         metric_relabel_configs:
         - action: replace
           replacement: "42"

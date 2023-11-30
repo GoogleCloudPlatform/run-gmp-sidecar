@@ -270,7 +270,7 @@ func (rc *RunMonitoringConfig) endpointScrapeConfig(index int) (*promconfig.Scra
 	}
 	relabelCfgs := relabelingsForMetadata(metadataLabels, rc.Env)
 	return endpointScrapeConfig(
-		fmt.Sprintf("RunMonitoring/%s", rc.Name),
+		rc.Name,
 		rc.Spec.Endpoints[index],
 		relabelCfgs,
 		rc.Spec.Limits,
@@ -378,9 +378,7 @@ func endpointScrapeConfig(id string, ep ScrapeEndpoint, relabelCfgs []*relabel.C
 	}
 
 	scrapeCfg := &promconfig.ScrapeConfig{
-		// Generate a job name to make it easy to track what generated the scrape configuration.
-		// The actual job label attached to its metrics is overwritten via relabeling.
-		JobName:                 fmt.Sprintf("%s/%s", id, ep.Port),
+		JobName:                 id,
 		ServiceDiscoveryConfigs: discoveryCfgs,
 		MetricsPath:             metricsPath,
 		Scheme:                  ep.Scheme,
