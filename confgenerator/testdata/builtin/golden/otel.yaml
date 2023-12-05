@@ -100,8 +100,8 @@ receivers:
       scrape_configs:
       - job_name: run-gmp-sidecar
         honor_timestamps: false
-        scrape_interval: 1m
-        scrape_timeout: 1m
+        scrape_interval: 30s
+        scrape_timeout: 30s
         metrics_path: /metrics
         follow_redirects: false
         enable_http2: false

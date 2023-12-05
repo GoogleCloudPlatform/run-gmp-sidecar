@@ -149,7 +149,7 @@ func DefaultRunMonitoringConfig() *RunMonitoringConfig {
 				{
 					Port:     "8080",
 					Path:     "/metrics",
-					Interval: "60s",
+					Interval: "30s",
 				},
 			},
 			TargetLabels: RunTargetLabels{Metadata: &allowedTargetMetadata},

@@ -145,8 +145,11 @@ telemetry collected by OpenTelemetry.
 
 ##### Create RunMonitoring config and store as a secret
 
-Create a `RunMonitoring` config and store it in secret manager. In this example, we use
-`run-gmp-config` as the secret name. The file we're using is `default-config.yaml` and it scrapes the main container at port `8080` using the path `/metrics`. You can replace this with any `RunMonitoring` config file that you want the sidecar to use.
+Create a `RunMonitoring` config and store it in secret manager. In this example,
+we use `run-gmp-config` as the secret name. The file we're using is
+`default-config.yaml` and it scrapes the main container at port `8080` using the
+path `/metrics` every 30s. You can replace this with any `RunMonitoring` config
+file that you want the sidecar to use.
 
 ```
 gcloud secrets create ${RUN_GMP_CONFIG}  --data-file=default-config.yaml
