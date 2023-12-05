@@ -19,7 +19,7 @@ REGION="us-east1"
 
 gcloud run services delete run-gmp-sidecar-service --region ${REGION} --quiet
 # Delete secret if we created it before
-if gcloud secrets list --filter="name ~ .*run-gmp-config.*" | grep run-gmp-sidecar
+if gcloud secrets list --filter="name ~ .*run-gmp-config.*" | grep run-gmp-config
 then
   gcloud secrets delete run-gmp-config
 fi
