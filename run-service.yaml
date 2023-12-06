@@ -17,12 +17,13 @@ kind: Service
 metadata:
   annotations:
     run.googleapis.com/launch-stage: ALPHA
-  name: run-gmp-sidecar-service
+  name: my-cloud-run-service
 spec:
   template:
     metadata:
       annotations:
         run.googleapis.com/execution-environment: gen1
+        run.googleapis.com/cpu-throttling: 'false'
         run.googleapis.com/container-dependencies: '{"collector":["app"]}'
         run.googleapis.com/secrets: '%SECRET%:projects/%PROJECT%/secrets/%SECRET%'
     spec:
@@ -49,5 +50,5 @@ spec:
         secret:
           items:
           - key: latest
-            path: config.yml
+            path: config.yaml
           secretName: '%SECRET%'

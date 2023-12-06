@@ -71,7 +71,7 @@ steps:
         "run",
         "services",
         "set-iam-policy",
-        "run-gmp-sidecar-service",
+        "my-cloud-run-service",
         "policy.yaml",
         "--region",
         "${_REGION}",

@@ -76,7 +76,7 @@ gcloud builds submit . --config=cloudbuild-simple.yaml --region=${REGION}
 After the build, run the following command to check the endpoint URL.
 
 ```console
-gcloud run services describe run-gmp-sidecar-service --region=${REGION} --format="value(status.url)"
+gcloud run services describe my-cloud-run-service --region=${REGION} --format="value(status.url)"
 ```
 
 ### Run sample (manual steps)
@@ -192,7 +192,7 @@ Finally before you make make the request to the URL, you need to change
 the Cloud Run service policy to accept unauthenticated HTTP access.
 
 ```
-gcloud run services set-iam-policy run-gmp-sidecar-service policy.yaml --region=${REGION}
+gcloud run services set-iam-policy my-cloud-run-service policy.yaml --region=${REGION}
 ```
 
 > **_NOTE:_**  If you have an Org policy that prevents unauthenticated access, then this step will fail. But fear not, you can simply curl the endpoint using `curl -H "Authorization: Bearer $(gcloud auth print-identity-token)" <ENDPOINT>` instead.

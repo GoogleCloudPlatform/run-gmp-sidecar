@@ -16,14 +16,33 @@
 PROJECT_ID=$(gcloud config get-value project)
 SA_NAME="run-gmp-sa"
 REGION="${REGION:-us-east1}"
+SERVICE_NAME="my-cloud-run-service"
+SECRET="run-gmp-config"
+REPO="run-gmp"
+SA="${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
 
-gcloud run services delete run-gmp-sidecar-service --region ${REGION} --quiet
-# Delete secret if we created it before
-if gcloud secrets list --filter="name ~ .*run-gmp-config.*" | grep run-gmp-config
+# Delete the service
+if gcloud run services list --project=${PROJECT_ID} --region=${REGION} | grep ${SERVICE_NAME}
 then
-  gcloud secrets delete run-gmp-config
+  gcloud run services delete ${SERVICE_NAME} --region ${REGION} --quiet
 fi
-gcloud artifacts repositories delete run-gmp \
-  --location=${REGION} \
-  --quiet
-gcloud iam service-accounts delete ${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com
+
+# Delete secret if we created it before.
+if gcloud secrets list --filter="name ~ .*${SECRET}.*" | grep ${SECRET}
+then
+  gcloud secrets delete ${SECRET}
+fi
+
+# Delete AR repo if it exists.
+if gcloud artifacts repositories list --project=${PROJECT_ID} --location=${REGION} | grep ${REPO}
+then
+  gcloud artifacts repositories delete ${REPO} \
+    --location=${REGION} \
+    --quiet
+fi
+
+# Delete SA if exists.
+if gcloud iam service-accounts list --project=${PROJECT_ID} | grep ${SA}
+then
+  gcloud iam service-accounts delete ${SA}
+fi

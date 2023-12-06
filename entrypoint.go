@@ -28,8 +28,8 @@ import (
 
 // Create channel to listen for signals.
 var signalChan chan (os.Signal) = make(chan os.Signal, 1)
-var userConfigFile = "/etc/rungmp/config.yml"
-var otelConfigFile = "/run/rungmp/otel.yml"
+var userConfigFile = "/etc/rungmp/config.yaml"
+var otelConfigFile = "/run/rungmp/otel.yaml"
 
 func main() {
 	// SIGINT handles Ctrl+C locally.
