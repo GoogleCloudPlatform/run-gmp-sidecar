@@ -12,7 +12,7 @@ here.](https://cloud.google.com/run/docs/deploying#multicontainer)
 ## Getting started
 
 The following steps walk you through setting up a sample app on Cloud Run that
-exports your applciations prometheus metrics to GMP.
+exports your application's Prometheus metrics to GMP.
 
 ### Prerequisites
 
@@ -37,6 +37,14 @@ minimum, the following IAM roles:
 
 The default Compute Engine Service Account has these roles already.
 
+Export several environment variables to control the project, region and secret
+name to use.
+```
+export GCP_PROJECT=<project-id>
+export REGION=us-east1
+export RUN_GMP_CONFIG=run-gmp-config
+```
+
 ### Run sample (automated)
 
 Because this sample requires `docker` or similar container build system for Linux runtime, you can use Cloud Build when you are trying without local Docker support. To enable Cloud Build, you need to enable Cloud Build API in your Google Cloud project.
@@ -60,7 +68,7 @@ Running `create-sa-and-ar.sh` creates a new service account `run-gmp-sa@<project
 
 ```console
 ./create-sa-and-ar.sh
-gcloud builds submit . --config=cloudbuild-simple.yaml
+gcloud builds submit . --config=cloudbuild-simple.yaml --region=${REGION}
 ```
 
 > **_NOTE:_**  If you have an Org policy that prevents unauthenticated access, then you might see a failure in the final step. You can safely ignore this failure.
@@ -68,7 +76,7 @@ gcloud builds submit . --config=cloudbuild-simple.yaml
 After the build, run the following command to check the endpoint URL.
 
 ```console
-gcloud run services describe run-gmp-sidecar-service --region=us-east1 --format="value(status.url)"
+gcloud run services describe run-gmp-sidecar-service --region=${REGION} --format="value(status.url)"
 ```
 
 ### Run sample (manual steps)
@@ -76,32 +84,30 @@ gcloud run services describe run-gmp-sidecar-service --region=us-east1 --format=
 #### Build the sample app
 
 The `app` directory contains a sample app written in Go. This app generates some
-simple prometheus metrics (a gauge and a counter).
+simple Prometheus metrics (a gauge and a counter).
 
 Create an Artifact Registry container image repository with the following
 commands:
 
 ```
-export GCP_PROJECT=<project-id>
-export RUN_GMP_CONFIG=run-gmp-config
 gcloud artifacts repositories create run-gmp \
     --repository-format=docker \
-    --location=us-east1
+    --location=${REGION}
 ```
 
 Authenticate your Docker client with `gcloud`:
 
 ```
 gcloud auth configure-docker \
-    us-east1-docker.pkg.dev
+    ${REGION}-docker.pkg.dev
 ```
 
 Build and push the app with the following commands:
 
 ```
 pushd sample-apps/simple-app
-docker build -t us-east1-docker.pkg.dev/$GCP_PROJECT/run-gmp/sample-app .
-docker push us-east1-docker.pkg.dev/$GCP_PROJECT/run-gmp/sample-app
+docker build -t ${REGION}-docker.pkg.dev/$GCP_PROJECT/run-gmp/sample-app .
+docker push ${REGION}-docker.pkg.dev/$GCP_PROJECT/run-gmp/sample-app
 popd
 ```
 
@@ -114,8 +120,8 @@ config file with it.
 Build the Collector image with the following commands:
 
 ```
-docker build -t us-east1-docker.pkg.dev/$GCP_PROJECT/run-gmp/collector .
-docker push us-east1-docker.pkg.dev/$GCP_PROJECT/run-gmp/collector
+docker build -t ${REGION}-docker.pkg.dev/$GCP_PROJECT/run-gmp/collector .
+docker push ${REGION}-docker.pkg.dev/$GCP_PROJECT/run-gmp/collector
 ```
 
 #### Create the Cloud Run Service (default config)
@@ -127,14 +133,14 @@ Replace the `%SAMPLE_APP_IMAGE%` and `%OTELCOL_IMAGE%` placeholders in
 `run-service-simple.yaml` with the images you built above, ie:
 
 ```
-sed -i s@%OTELCOL_IMAGE%@us-east1-docker.pkg.dev/${GCP_PROJECT}/run-gmp/collector@g run-service-simple.yaml
-sed -i s@%SAMPLE_APP_IMAGE%@us-east1-docker.pkg.dev/${GCP_PROJECT}/run-gmp/sample-app@g run-service-simple.yaml
+sed -i s@%OTELCOL_IMAGE%@${REGION}-docker.pkg.dev/${GCP_PROJECT}/run-gmp/collector@g run-service-simple.yaml
+sed -i s@%SAMPLE_APP_IMAGE%@${REGION}-docker.pkg.dev/${GCP_PROJECT}/run-gmp/sample-app@g run-service-simple.yaml
 ```
 
 Create the Service with the following command:
 
 ```
-gcloud run services replace run-service-simple.yaml
+gcloud run services replace run-service-simple.yaml --region=${REGION}
 ```
 
 This command will return an external URL for your Service’s endpoint. Save this
@@ -164,8 +170,8 @@ Replace the `%SAMPLE_APP_IMAGE%`, `%OTELCOL_IMAGE%`, `%PROJECT%` and `%SECRET%`
 placeholders in `run-service.yaml` with the images you built above, ie:
 
 ```
-sed -i s@%OTELCOL_IMAGE%@us-east1-docker.pkg.dev/${GCP_PROJECT}/run-gmp/collector@g run-service.yaml
-sed -i s@%SAMPLE_APP_IMAGE%@us-east1-docker.pkg.dev/${GCP_PROJECT}/run-gmp/sample-app@g run-service.yaml
+sed -i s@%OTELCOL_IMAGE%@${REGION}-docker.pkg.dev/${GCP_PROJECT}/run-gmp/collector@g run-service.yaml
+sed -i s@%SAMPLE_APP_IMAGE%@${REGION}-docker.pkg.dev/${GCP_PROJECT}/run-gmp/sample-app@g run-service.yaml
 sed -i s@%PROJECT%@${GCP_PROJECT}@g run-service.yaml
 sed -i s@%SECRET%@${RUN_GMP_CONFIG}@g run-service.yaml
 ```
@@ -173,7 +179,7 @@ sed -i s@%SECRET%@${RUN_GMP_CONFIG}@g run-service.yaml
 Create the Service with the following command:
 
 ```
-gcloud run services replace run-service.yaml
+gcloud run services replace run-service.yaml --region=${REGION}
 ```
 
 This command will return an external URL for your Service’s endpoint. Save this
@@ -186,7 +192,7 @@ Finally before you make make the request to the URL, you need to change
 the Cloud Run service policy to accept unauthenticated HTTP access.
 
 ```
-gcloud run services set-iam-policy run-gmp-sidecar-service policy.yaml
+gcloud run services set-iam-policy run-gmp-sidecar-service policy.yaml --region=${REGION}
 ```
 
 > **_NOTE:_**  If you have an Org policy that prevents unauthenticated access, then this step will fail. But fear not, you can simply curl the endpoint using `curl -H "Authorization: Bearer $(gcloud auth print-identity-token)" <ENDPOINT>` instead.

@@ -15,7 +15,7 @@
 
 PROJECT_ID=$(gcloud config get-value project)
 SA_NAME="run-gmp-sa"
-REGION="us-east1"
+REGION="${REGION:-us-east1}"
 
 gcloud run services delete run-gmp-sidecar-service --region ${REGION} --quiet
 # Delete secret if we created it before

@@ -17,7 +17,7 @@ set -ex
 
 PROJECT_ID=$(gcloud config get-value project)
 SA_NAME="run-gmp-sa"
-REGION="us-east1"
+REGION="${REGION:-us-east1}"
 
 #### Create service account with required roles
 gcloud iam service-accounts create "${SA_NAME}" \
