@@ -21,8 +21,8 @@ REGION="${REGION:-us-east1}"
 
 #### Create service account with required roles
 gcloud iam service-accounts create "${SA_NAME}" \
-  --description="A service account just to used for Cloud Run observability demo. https://github.com/GoogleCloudPlatform/opentelemetry-cloud-run" \
-  --display-name="Cloud Run OpenTelemetry demo service account" \
+  --description="A service account just to used for Cloud Run GMP demo. https://github.com/GoogleCloudPlatform/run-gmp-sidecar" \
+  --display-name="Cloud Run GMP Sidecar demo service account" \
   --quiet
 
 gcloud projects add-iam-policy-binding "${PROJECT_ID}" \

@@ -77,7 +77,7 @@ func getUserAgent() (string, error) {
 	}
 
 	userAgent := fmt.Sprintf(
-		"Google Cloud Metrics Agent/%v (TargetPlatform=%v; Framework=OpenTelemetry Collector) %s %s(Cores=%v; Memory=%0.1fGB; Disk=%0.1fGB)",
+		"Google Cloud Run GMP Sidecar/%v (TargetPlatform=%v; Framework=OpenTelemetry Collector) %s %s(Cores=%v; Memory=%0.1fGB; Disk=%0.1fGB)",
 		version.Version,
 		cases.Title(language.English).String(runtime.GOOS),
 		platform,
