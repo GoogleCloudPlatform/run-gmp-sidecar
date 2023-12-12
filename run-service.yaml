@@ -22,7 +22,7 @@ spec:
   template:
     metadata:
       annotations:
-        run.googleapis.com/execution-environment: gen1
+        run.googleapis.com/execution-environment: gen2
         run.googleapis.com/cpu-throttling: 'false'
         run.googleapis.com/container-dependencies: '{"collector":["app"]}'
         run.googleapis.com/secrets: '%SECRET%:projects/%PROJECT%/secrets/%SECRET%'
