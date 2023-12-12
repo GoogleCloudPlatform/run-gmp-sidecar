@@ -22,7 +22,7 @@ spec:
   template:
     metadata:
       annotations:
-        run.googleapis.com/execution-environment: gen1
+        run.googleapis.com/execution-environment: gen2
         run.googleapis.com/cpu-throttling: 'false'
         run.googleapis.com/container-dependencies: '{"collector":["app"]}'
     spec:
@@ -39,5 +39,5 @@ spec:
             port: 8000
         ports:
         - containerPort: 8000
-      - image: "%OTELCOL_IMAGE%"
+      - image: us-docker.pkg.dev/cloud-ops-agents-artifacts/cloud-run-gmp-sidecar/cloud-run-gmp-sidecar:1.0.0
         name: collector

@@ -24,28 +24,14 @@ steps:
     waitFor:
       - BUILD_SAMPLE_APP
 
-  - name: "gcr.io/cloud-builders/docker"
-    args: ["build", "-t", "${_IMAGE_COLLECTOR}", "."]
-    id: BUILD_COLLECTOR
-    waitFor: ["-"]
-
-  - name: "gcr.io/cloud-builders/docker"
-    args: ["push", "${_IMAGE_COLLECTOR}"]
-    id: PUSH_COLLECTOR
-    waitFor:
-      - BUILD_COLLECTOR
-
   - name: "ubuntu"
     env:
       - "IMAGE_APP=${_IMAGE_APP}"
-      - "IMAGE_COLLECTOR=${_IMAGE_COLLECTOR}"
-      - "PROJECT=${_GCP_PROJECT}"
     script: |
-      sed -i s@%OTELCOL_IMAGE%@${IMAGE_COLLECTOR}@g run-service-simple.yaml
       sed -i s@%SAMPLE_APP_IMAGE%@${IMAGE_APP}@g run-service-simple.yaml
     id: REPLACE_YAML_VALUE
     waitFor:
-      - PUSH_COLLECTOR
+      - PUSH_SAMPLE_APP
 
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
     entrypoint: gcloud
@@ -61,7 +47,6 @@ steps:
     id: DEPLOY_MULTICONTAINER
     waitFor:
       - PUSH_SAMPLE_APP
-      - PUSH_COLLECTOR
       - REPLACE_YAML_VALUE
 
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
@@ -86,12 +71,10 @@ substitutions:
   _GCP_PROJECT: ${PROJECT_ID}
   _REGISTRY: ${_REGION}-docker.pkg.dev/${_GCP_PROJECT}/run-gmp
   _IMAGE_APP: ${_REGISTRY}/sample-app
-  _IMAGE_COLLECTOR: ${_REGISTRY}/collector
   _SA_NAME: run-gmp-sa
 
 images:
   - ${_IMAGE_APP}
-  - ${_IMAGE_COLLECTOR}
 
 # comment out the following line if you want to run Cloud Build with the existing
 # service account with the following roles.
