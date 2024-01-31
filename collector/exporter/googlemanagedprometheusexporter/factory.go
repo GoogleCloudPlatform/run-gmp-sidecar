@@ -33,11 +33,8 @@ func NewFactory() exporter.Factory {
 
 // createDefaultConfig creates the default configuration for exporter.
 func createDefaultConfig() component.Config {
-	retrySettings := exporterhelper.NewDefaultRetrySettings()
-	retrySettings.Enabled = false
 	return &Config{
 		TimeoutSettings: exporterhelper.TimeoutSettings{Timeout: defaultTimeout},
-		RetrySettings:   retrySettings,
 		QueueSettings:   exporterhelper.NewDefaultQueueSettings(),
 		GMPConfig: GMPConfig{
 			MetricConfig: MetricConfig{
@@ -73,6 +70,5 @@ func createMetricsExporter(
 		// Disable exporterhelper Timeout, since we are using a custom mechanism
 		// within exporter itself
 		exporterhelper.WithTimeout(exporterhelper.TimeoutSettings{Timeout: 0}),
-		exporterhelper.WithQueue(eCfg.QueueSettings),
-		exporterhelper.WithRetry(eCfg.RetrySettings))
+		exporterhelper.WithQueue(eCfg.QueueSettings))
 }

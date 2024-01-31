@@ -27,6 +27,6 @@ import (
 func Test_Create(t *testing.T) {
 	require.NoError(t, Create())
 
-	expectedUserAgentRegex := fmt.Sprintf(`^Google Cloud Metrics Agent/latest \(TargetPlatform=(?i:%v); Framework=OpenTelemetry Collector\) .* \(Cores=\d+; Memory=(?:[0-9]*[.])?[0-9]+GB; Disk=(?:[0-9]*[.])?[0-9]+GB\)$`, runtime.GOOS)
+	expectedUserAgentRegex := fmt.Sprintf(`^Google Cloud Run GMP Sidecar/latest \(TargetPlatform=(?i:%v); Framework=OpenTelemetry Collector\) .* \(Cores=\d+; Memory=(?:[0-9]*[.])?[0-9]+GB; Disk=(?:[0-9]*[.])?[0-9]+GB\)$`, runtime.GOOS)
 	assert.Regexp(t, expectedUserAgentRegex, os.Getenv("USERAGENT"))
 }
