@@ -22,7 +22,7 @@ import (
 )
 
 // GenerateOtelConfig generates the complete collector config including the agent self metrics.
-func (rc *RunMonitoringConfig) GenerateOtelConfig(ctx context.Context) (string, error) {
+func (rc *RunMonitoringConfig) GenerateOtelConfig(ctx context.Context, selfMetricsPort int) (string, error) {
 	userAgent, _ := UserAgent("Google-Cloud-Run-GMP-Sidecar", "run-gmp", Version)
 	metricVersionLabel, _ := VersionLabel("run-gmp-sidecar")
 	receiverPipelines := make(map[string]otel.ReceiverPipeline)
@@ -32,16 +32,7 @@ func (rc *RunMonitoringConfig) GenerateOtelConfig(ctx context.Context) (string, 
 	}
 	receiverPipelines["application-metrics"] = *sidecarPipeline
 
-	// Find a free port for self metrics.
-	var selfMetricsPort = rc.SelfMetricsPort
-	if selfMetricsPort == 0 {
-		selfMetricsPort, err = getFreePort()
-		if err != nil {
-			return "", err
-		}
-	}
 	log.Printf("confgenerator: using port %d for self metrics", selfMetricsPort)
-
 	receiverPipelines["run-gmp-self-metrics"] = AgentSelfMetrics{
 		Version: metricVersionLabel,
 		Port:    selfMetricsPort,
