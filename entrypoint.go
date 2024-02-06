@@ -35,7 +35,7 @@ var otelConfigFile = "/run/rungmp/otel.yaml"
 var configRefreshInterval = 10 * time.Second
 
 // Generate OTel config from RunMonitoring config
-func generateOtelConfig(ctx context.Context, userConfigFile string, selfMetricsPort int) error {
+func generateOtelConfig(ctx context.Context, userConfigFile string) error {
 	// Pick up RunMonitoring configuration from mounted volume that is tied to
 	// secret manager.  Translate it from RunMonitoring to OTel.
 	c, err := confgenerator.ReadConfigFromFile(ctx, userConfigFile)
@@ -44,7 +44,7 @@ func generateOtelConfig(ctx context.Context, userConfigFile string, selfMetricsP
 	}
 
 	// Create the OTel config and write it to disk
-	otel, err := c.GenerateOtelConfig(ctx, selfMetricsPort)
+	otel, err := c.GenerateOtelConfig(ctx)
 	if err != nil {
 		return err
 	}
@@ -64,13 +64,7 @@ func main() {
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 	ctx := context.Background()
 
-	// Find a self metrics port for the sidecar.
-	selfMetricsPort, err := confgenerator.GetFreePort()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = generateOtelConfig(ctx, userConfigFile, selfMetricsPort)
+	err := generateOtelConfig(ctx, userConfigFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -100,7 +94,7 @@ func main() {
 			}
 
 			if stat.Size() != lastStat.Size() || stat.ModTime() != lastStat.ModTime() {
-				err := generateOtelConfig(ctx, userConfigFile, selfMetricsPort)
+				err := generateOtelConfig(ctx, userConfigFile)
 				if err != nil {
 					log.Fatal(err)
 				}

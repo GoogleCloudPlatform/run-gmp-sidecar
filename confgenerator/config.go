@@ -37,7 +37,8 @@ type RunMonitoringConfig struct {
 	metav1.ObjectMeta `yaml:"metadata,omitempty"`
 	Spec              RunMonitoringSpec `yaml:"spec"`
 
-	Env *CloudRunEnvironment
+	Env             *CloudRunEnvironment
+	SelfMetricsPort int
 }
 
 // RunMonitoringSpec contains specification parameters for RunMonitoring.
@@ -154,6 +155,7 @@ func DefaultRunMonitoringConfig() *RunMonitoringConfig {
 			TargetLabels: RunTargetLabels{Metadata: &allowedTargetMetadata},
 		},
 		nil,
+		0, /* dynamic port selection for self metrics */
 	}
 }
 
