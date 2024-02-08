@@ -39,6 +39,7 @@ import (
 	"go.uber.org/multierr"
 
 	"github.com/GoogleCloudPlatform/run-gmp-sidecar/collector/exporter/googlemanagedprometheusexporter"
+	"github.com/GoogleCloudPlatform/run-gmp-sidecar/collector/exporter/googlemanagedprometheusexporternew"
 	"github.com/GoogleCloudPlatform/run-gmp-sidecar/collector/receiver/prometheusreceiver"
 )
 
@@ -73,6 +74,7 @@ func components() (otelcol.Factories, error) {
 		fileexporter.NewFactory(),
 		googlecloudexporter.NewFactory(),
 		googlemanagedprometheusexporter.NewFactory(),
+		googlemanagedprometheusexporternew.NewFactory(),
 	}
 	for _, exp := range factories.Exporters {
 		exporters = append(exporters, exp)
