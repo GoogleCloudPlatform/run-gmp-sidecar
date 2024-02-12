@@ -35,8 +35,18 @@ var otelConfigFile = "/run/rungmp/otel.yaml"
 var configRefreshInterval = 10 * time.Second
 var selfMetricsPort = 0
 
-// Generate OTel config from RunMonitoring config
-func generateOtelConfig(ctx context.Context, userConfigFile string) error {
+// Generate OTel config from RunMonitoring config. Returns FileInfo of the user
+// config, whether its the default config, and an error if generation of OTel
+// configs failed.
+func generateOtelConfig(ctx context.Context, userConfigFile string) (os.FileInfo, bool, error) {
+	info, err := os.Stat(userConfigFile)
+	if os.IsNotExist(err) {
+		return nil, true, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+
 	// Pick up RunMonitoring configuration from mounted volume that is tied to
 	// secret manager.  Translate it from RunMonitoring to OTel.
 	c, err := confgenerator.ReadConfigFromFile(ctx, userConfigFile)
@@ -47,23 +57,23 @@ func generateOtelConfig(ctx context.Context, userConfigFile string) error {
 	if selfMetricsPort == 0 {
 		selfMetricsPort, err = confgenerator.GetFreePort()
 		if err != nil {
-			return err
+			return nil, false, err
 		}
 	}
 
 	// Create the OTel config and write it to disk
 	otel, err := c.GenerateOtelConfig(ctx, selfMetricsPort)
 	if err != nil {
-		return err
+		return nil, false, err
 	}
 	if err := os.MkdirAll(filepath.Dir(otelConfigFile), 0755); err != nil {
-		return fmt.Errorf("failed to create directory for %q: %v", otelConfigFile, err)
+		return nil, false, fmt.Errorf("failed to create directory for %q: %v", otelConfigFile, err)
 	}
 	if err := ioutil.WriteFile(otelConfigFile, []byte(otel), 0644); err != nil {
-		return fmt.Errorf("failed to write file to %q: %v", otelConfigFile, err)
+		return nil, false, fmt.Errorf("failed to write file to %q: %v", otelConfigFile, err)
 	}
 
-	return nil
+	return info, false, nil
 }
 
 func main() {
@@ -72,7 +82,7 @@ func main() {
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 	ctx := context.Background()
 
-	err := generateOtelConfig(ctx, userConfigFile)
+	lastStat, lastDefault, err := generateOtelConfig(ctx, userConfigFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -89,27 +99,30 @@ func main() {
 	log.Printf("entrypoint: started OTel successfully")
 
 	refreshTicker := time.NewTicker(configRefreshInterval)
-	lastStat, err := os.Stat(userConfigFile)
-	if err != nil {
-		log.Fatal(err)
-	}
 	for {
 		select {
 		case <-refreshTicker.C:
 			stat, err := os.Stat(userConfigFile)
-			if err != nil {
+			if err != nil && !os.IsNotExist(err) {
 				log.Fatal(err)
 			}
 
-			if stat.ModTime() != lastStat.ModTime() {
-				err := generateOtelConfig(ctx, userConfigFile)
+			// Check if we're using the default config. Only reload if something
+			// has changed since the last time we checked.
+			isDefault := os.IsNotExist(err)
+			if isDefault && lastDefault {
+				continue
+			}
+
+			// Something changed since the last time we checked the config.
+			if isDefault || lastDefault || stat.ModTime() != lastStat.ModTime() || stat.Size() != lastStat.Size() {
+				lastStat, lastDefault, err = generateOtelConfig(ctx, userConfigFile)
 				if err != nil {
 					log.Fatal(err)
 				}
 
 				// Signal the OTel collector to reload its config
 				collectorProcess.Signal(syscall.SIGHUP)
-				lastStat = stat
 				log.Println("entrypoint: reloaded OTel config")
 			}
 		case sig := <-signalChan:
