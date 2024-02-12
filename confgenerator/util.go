@@ -75,6 +75,21 @@ func UserAgent(prefix, shortName, shortVersion string) (string, error) {
 	return expandTemplate(userAgentTemplate, prefix, extraParams)
 }
 
+// GetFreePort finds a port on localhost that is unused.
+func GetFreePort() (int, error) {
+	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
+	if err != nil {
+		return 0, err
+	}
+
+	l, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		return 0, err
+	}
+	defer l.Close()
+	return l.Addr().(*net.TCPAddr).Port, nil
+}
+
 func contains(s []string, str string) bool {
 	for _, v := range s {
 		if v == str {
@@ -120,18 +135,4 @@ func matchesAllProtectedLabels(re relabel.Regexp) bool {
 		}
 	}
 	return true
-}
-
-func getFreePort() (int, error) {
-	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
-	if err != nil {
-		return 0, err
-	}
-
-	l, err := net.ListenTCP("tcp", addr)
-	if err != nil {
-		return 0, err
-	}
-	defer l.Close()
-	return l.Addr().(*net.TCPAddr).Port, nil
 }

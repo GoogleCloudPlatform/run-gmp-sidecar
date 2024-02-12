@@ -33,6 +33,7 @@ var signalChan chan (os.Signal) = make(chan os.Signal, 1)
 var userConfigFile = "/etc/rungmp/config.yaml"
 var otelConfigFile = "/run/rungmp/otel.yaml"
 var configRefreshInterval = 10 * time.Second
+var selfMetricsPort = 0
 
 // Generate OTel config from RunMonitoring config
 func generateOtelConfig(ctx context.Context, userConfigFile string) error {
@@ -43,8 +44,15 @@ func generateOtelConfig(ctx context.Context, userConfigFile string) error {
 		log.Fatal(err)
 	}
 
+	if selfMetricsPort == 0 {
+		selfMetricsPort, err = confgenerator.GetFreePort()
+		if err != nil {
+			return err
+		}
+	}
+
 	// Create the OTel config and write it to disk
-	otel, err := c.GenerateOtelConfig(ctx)
+	otel, err := c.GenerateOtelConfig(ctx, selfMetricsPort)
 	if err != nil {
 		return err
 	}
@@ -93,7 +101,7 @@ func main() {
 				log.Fatal(err)
 			}
 
-			if stat.Size() != lastStat.Size() || stat.ModTime() != lastStat.ModTime() {
+			if stat.ModTime() != lastStat.ModTime() {
 				err := generateOtelConfig(ctx, userConfigFile)
 				if err != nil {
 					log.Fatal(err)

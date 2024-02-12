@@ -110,10 +110,10 @@ func generateConfigs(testDir string) (got map[string]string, err error) {
 
 	// Use deterministic metadata and self metrics port for tests
 	c.Env = testMetadata()
-	c.SelfMetricsPort = 42
+	selfMetricsPort := 42
 
 	// Otel configs
-	otelGeneratedConfig, err := c.GenerateOtelConfig(ctx)
+	otelGeneratedConfig, err := c.GenerateOtelConfig(ctx, selfMetricsPort)
 	if err != nil {
 		return
 	}
