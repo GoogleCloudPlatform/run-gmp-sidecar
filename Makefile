@@ -15,7 +15,7 @@ BUILD_X2 := -X $(BUILD_INFO_IMPORT_PATH).Version=$(PKG_VERSION)
 BUILD_X3 := -X $(ENTRYPOINT_BUILD_INFO_IMPORT_PATH).Version=$(PKG_VERSION)
 LD_FLAGS := -ldflags "${BUILD_X1} ${BUILD_X2} ${BUILD_X3}"
 
-TOOLS_DIR := internal/tools
+TOOLS_DIR := collector/internal/tools
 
 .EXPORT_ALL_VARIABLES:
 
@@ -43,6 +43,8 @@ update-components:
 		grep "^github.com/open-telemetry/opentelemetry-collector-contrib" | \
 		xargs -t -I '{}' go get {}@$(OTEL_VER)
 	go mod tidy
+	cd $(TOOLS_DIR) && go get -u github.com/open-telemetry/opentelemetry-collector-contrib/cmd/mdatagen
+	cd $(TOOLS_DIR) && go mod tidy
 
 # We can bring this target back when https://github.com/open-telemetry/opentelemetry-collector/issues/8063 is resolved.
 update-opentelemetry:
