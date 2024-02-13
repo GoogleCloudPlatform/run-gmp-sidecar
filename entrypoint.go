@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/GoogleCloudPlatform/run-gmp-sidecar/confgenerator"
+	"gopkg.in/yaml.v2"
 )
 
 // Create channel to listen for signals.
@@ -53,6 +54,13 @@ func generateOtelConfig(ctx context.Context, userConfigFile string) (os.FileInfo
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Log the user config to stdout.
+	yamlData, err := yaml.Marshal(c)
+	if err != nil {
+		log.Fatalf("error while marshaling user config: %v", err)
+	}
+	log.Printf("Using RunMonitoring config:\n%v", yamlData)
 
 	if selfMetricsPort == 0 {
 		selfMetricsPort, err = confgenerator.GetFreePort()
