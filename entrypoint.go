@@ -36,16 +36,24 @@ var otelConfigFile = "/run/rungmp/otel.yaml"
 var configRefreshInterval = 10 * time.Second
 var selfMetricsPort = 0
 
-// Generate OTel config from RunMonitoring config. Returns FileInfo of the user
-// config, whether its the default config, and an error if generation of OTel
-// configs failed.
-func generateOtelConfig(ctx context.Context, userConfigFile string) (os.FileInfo, bool, error) {
+func getConfigFileInfo(userConfigFile string) (os.FileInfo, bool, error) {
 	info, err := os.Stat(userConfigFile)
 	if os.IsNotExist(err) {
 		return nil, true, nil
 	}
 	if err != nil {
 		return nil, false, err
+	}
+	return info, false, nil
+}
+
+// Generate OTel config from RunMonitoring config. Returns FileInfo of the user
+// config, whether its the default config, and an error if generation of OTel
+// configs failed.
+func generateOtelConfig(ctx context.Context, userConfigFile string) (os.FileInfo, bool, error) {
+	info, isDefault, err := getConfigFileInfo(userConfigFile)
+	if err != nil {
+		return nil, isDefault, err
 	}
 
 	// Pick up RunMonitoring configuration from mounted volume that is tied to
@@ -60,28 +68,28 @@ func generateOtelConfig(ctx context.Context, userConfigFile string) (os.FileInfo
 	if err != nil {
 		log.Fatalf("error while marshaling user config: %v", err)
 	}
-	log.Printf("Using RunMonitoring config:\n%v", yamlData)
+	log.Printf("Using RunMonitoring config:\n%v", string(yamlData))
 
 	if selfMetricsPort == 0 {
 		selfMetricsPort, err = confgenerator.GetFreePort()
 		if err != nil {
-			return nil, false, err
+			return nil, isDefault, err
 		}
 	}
 
 	// Create the OTel config and write it to disk
 	otel, err := c.GenerateOtelConfig(ctx, selfMetricsPort)
 	if err != nil {
-		return nil, false, err
+		return nil, isDefault, err
 	}
 	if err := os.MkdirAll(filepath.Dir(otelConfigFile), 0755); err != nil {
-		return nil, false, fmt.Errorf("failed to create directory for %q: %v", otelConfigFile, err)
+		return nil, isDefault, fmt.Errorf("failed to create directory for %q: %v", otelConfigFile, err)
 	}
 	if err := ioutil.WriteFile(otelConfigFile, []byte(otel), 0644); err != nil {
-		return nil, false, fmt.Errorf("failed to write file to %q: %v", otelConfigFile, err)
+		return nil, isDefault, fmt.Errorf("failed to write file to %q: %v", otelConfigFile, err)
 	}
 
-	return info, false, nil
+	return info, isDefault, nil
 }
 
 func main() {
@@ -110,14 +118,13 @@ func main() {
 	for {
 		select {
 		case <-refreshTicker.C:
-			stat, err := os.Stat(userConfigFile)
-			if err != nil && !os.IsNotExist(err) {
+			stat, isDefault, err := getConfigFileInfo(userConfigFile)
+			if err != nil {
 				log.Fatal(err)
 			}
 
 			// Check if we're using the default config. Only reload if something
 			// has changed since the last time we checked.
-			isDefault := os.IsNotExist(err)
 			if isDefault && lastDefault {
 				continue
 			}
