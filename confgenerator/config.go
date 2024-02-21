@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 
@@ -37,8 +38,7 @@ type RunMonitoringConfig struct {
 	metav1.ObjectMeta `yaml:"metadata,omitempty"`
 	Spec              RunMonitoringSpec `yaml:"spec"`
 
-	Env             *CloudRunEnvironment
-	SelfMetricsPort int
+	Env *CloudRunEnvironment
 }
 
 // RunMonitoringSpec contains specification parameters for RunMonitoring.
@@ -155,7 +155,6 @@ func DefaultRunMonitoringConfig() *RunMonitoringConfig {
 			TargetLabels: RunTargetLabels{Metadata: &allowedTargetMetadata},
 		},
 		nil,
-		0, /* dynamic port selection for self metrics */
 	}
 }
 
@@ -170,6 +169,7 @@ func ReadConfigFromFile(ctx context.Context, path string) (*RunMonitoringConfig,
 
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
+			log.Println("confgenerator: no user config file found, using default config")
 			return config, nil
 		}
 		return nil, fmt.Errorf("failed to retrieve the user config file %q: %w", path, err)
@@ -179,6 +179,7 @@ func ReadConfigFromFile(ctx context.Context, path string) (*RunMonitoringConfig,
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("confgenerator: using RunMonitoring config:\n%s", string(data))
 
 	// Unmarshal the user config over the default config. If some options are unspecified
 	// the collector uses the default settings for those options. For example, if not specified
