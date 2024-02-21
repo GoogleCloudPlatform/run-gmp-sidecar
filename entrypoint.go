@@ -52,9 +52,8 @@ func getRawUserConfig(userConfigFile string) (string, error) {
 	return string(data), nil
 }
 
-// Generate OTel config from RunMonitoring config. Returns the raw user
-// config, whether its the default config, and an error if generation of OTel
-// configs failed.
+// Generate OTel config from RunMonitoring config. Returns an error if
+// generation of OTel configs failed.
 func generateOtelConfig(ctx context.Context, userConfigFile string) error {
 	// Pick up RunMonitoring configuration from mounted volume that is tied to
 	// secret manager.  Translate it from RunMonitoring to OTel.
