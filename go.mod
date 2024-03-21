@@ -52,7 +52,6 @@ require (
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.1.1 // indirect
 	github.com/apache/thrift v0.19.0 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
-	github.com/distribution/reference v0.5.0 // indirect
 	github.com/expr-lang/expr v1.16.0 // indirect
 	github.com/go-playground/validator/v10 v10.15.5 // indirect
 	github.com/go-viper/mapstructure/v2 v2.0.0-alpha.1 // indirect
@@ -72,7 +71,6 @@ require (
 	github.com/knadh/koanf/v2 v2.1.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/leodido/ragel-machinery v0.0.0-20181214104525-299bdde78165 // indirect
-	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/opencensusexporter v0.93.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/syslogexporter v0.93.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporter v0.93.0 // indirect
@@ -173,7 +171,8 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/digitalocean/godo v1.104.1 // indirect
-	github.com/docker/docker v26.0.0+incompatible // indirect
+	github.com/docker/distribution v2.8.2+incompatible // indirect
+	github.com/docker/docker v24.0.9+incompatible // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.10.2 // indirect
