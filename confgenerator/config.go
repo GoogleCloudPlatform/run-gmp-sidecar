@@ -61,6 +61,8 @@ type RunTargetLabels struct {
 
 // ScrapeEndpoint specifies a Prometheus metrics endpoint to scrape.
 type ScrapeEndpoint struct {
+	// The job name to which the job label is set by default.
+	JobName string `yaml:"jobName,omitempty"`
 	// Name or number of the port to scrape.
 	Port string `yaml:"port"`
 	// Protocol scheme to use to scrape.
@@ -270,8 +272,12 @@ func (rc *RunMonitoringConfig) endpointScrapeConfig(index int) (*promconfig.Scra
 		}
 	}
 	relabelCfgs := relabelingsForMetadata(metadataLabels, rc.Env)
+	jobName := rc.Spec.Endpoints[index].JobName
+	if jobName == "" {
+		jobName = rc.ObjectMeta.Name
+	}
 	return endpointScrapeConfig(
-		rc.Name,
+		jobName,
 		rc.Spec.Endpoints[index],
 		relabelCfgs,
 		rc.Spec.Limits,

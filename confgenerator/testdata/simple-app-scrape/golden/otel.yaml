@@ -96,7 +96,7 @@ receivers:
     allow_cumulative_resets: true
     config:
       scrape_configs:
-      - job_name: run-run-run
+      - job_name: endpoint-job-name
         honor_timestamps: false
         scrape_interval: 1m
         scrape_timeout: 1m

@@ -20,3 +20,4 @@ spec:
   endpoints:
   - port: 8080
     interval: 60s
+    jobName: endpoint-job-name
