@@ -161,31 +161,52 @@ func DefaultRunMonitoringConfig() *RunMonitoringConfig {
 // ReadConfigFromFile reads the user config file and returns a RunMonitoringConfig.
 // If the user config file does not exist, or is empty - it returns the default
 // RunMonitoringConfig.
-func ReadConfigFromFile(ctx context.Context, path string) (*RunMonitoringConfig, error) {
+func ReadConfigFromFile(ctx context.Context, path string, scrapePorts, cfgEnv string) (*RunMonitoringConfig, error) {
 	config := DefaultRunMonitoringConfig()
 
 	// Fetch metadata from the available environment variables.
 	config.Env = fetchMetadata()
 
+	cfgFromEnv := false
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
-			log.Println("confgenerator: no user config file found, using default config")
-			return config, nil
+			if cfgEnv != "" {
+				if err := yaml.UnmarshalContext(ctx, []byte(cfgEnv), &config.Spec, yaml.Strict()); err != nil {
+					return nil, err
+				}
+				cfgFromEnv = true
+			} else {
+				if scrapePorts != "" {
+					pl := strings.Split(scrapePorts, ",")
+					for _, p := range pl {
+						config.Spec.Endpoints = append(config.Spec.Endpoints, ScrapeEndpoint{
+							Port:     p,
+							Path:     "/metrics",
+							Interval: "30s"})
+					}
+					cfgFromEnv = true
+				}
+
+			}
 		}
-		return nil, fmt.Errorf("failed to retrieve the user config file %q: %w", path, err)
+		if !cfgFromEnv {
+			return nil, fmt.Errorf("failed to retrieve the user config file %q: %w", path, err)
+		}
 	}
 
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	log.Printf("confgenerator: using RunMonitoring config:\n%s", string(data))
+	if !cfgFromEnv {
+		data, err := ioutil.ReadFile(path)
+		if err != nil {
+			return nil, err
+		}
+		log.Printf("confgenerator: using RunMonitoring config:\n%s", string(data))
 
-	// Unmarshal the user config over the default config. If some options are unspecified
-	// the collector uses the default settings for those options. For example, if not specified
-	// targetLabels is set to {"revision", "service", "configuration"}
-	if err := yaml.UnmarshalContext(ctx, data, config, yaml.Strict()); err != nil {
-		return nil, err
+		// Unmarshal the user config over the default config. If some options are unspecified
+		// the collector uses the default settings for those options. For example, if not specified
+		// targetLabels is set to {"revision", "service", "configuration"}
+		if err := yaml.UnmarshalContext(ctx, data, config, yaml.Strict()); err != nil {
+			return nil, err
+		}
 	}
 
 	// Validate the RunMonitoring config

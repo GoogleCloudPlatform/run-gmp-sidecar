@@ -31,7 +31,7 @@ import (
 // Create channel to listen for signals.
 var signalChan chan (os.Signal) = make(chan os.Signal, 1)
 var userConfigFile = "/etc/rungmp/config.yaml"
-var otelConfigFile = "/run/rungmp/otel.yaml"
+var otelConfigFile = "/tmp/rungmp/otel.yaml"
 var configRefreshInterval = 20 * time.Second
 var selfMetricsPort = 0
 
@@ -57,7 +57,7 @@ func getRawUserConfig(userConfigFile string) (string, error) {
 func generateOtelConfig(ctx context.Context, userConfigFile string) error {
 	// Pick up RunMonitoring configuration from mounted volume that is tied to
 	// secret manager.  Translate it from RunMonitoring to OTel.
-	c, err := confgenerator.ReadConfigFromFile(ctx, userConfigFile)
+	c, err := confgenerator.ReadConfigFromFile(ctx, userConfigFile, os.Getenv("GMP_CFG_SPEC"), os.Getenv("GMP_SCRAPE_PORTS"))
 	if err != nil {
 		log.Fatal(err)
 	}
