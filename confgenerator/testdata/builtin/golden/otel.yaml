@@ -96,7 +96,7 @@ receivers:
     allow_cumulative_resets: true
     config:
       scrape_configs:
-      - job_name: run-gmp-sidecar
+      - job_name: run-gmp-sidecar-0
         honor_timestamps: false
         scrape_interval: 30s
         scrape_timeout: 30s
@@ -115,6 +115,9 @@ receivers:
         - source_labels: [__address__]
           target_label: configuration_name
           replacement: test_configuration
+          action: replace
+        - target_label: job
+          replacement: run-gmp-sidecar
           action: replace
         - source_labels: [__address__]
           target_label: cluster
