@@ -271,16 +271,11 @@ func (rc *RunMonitoringConfig) endpointScrapeConfig(index int) (*promconfig.Scra
 	}
 	relabelCfgs := relabelingsForMetadata(metadataLabels, rc.Env)
 
-	relabelCfgs = append(relabelCfgs, &relabel.Config{
-		Action:      relabel.Replace,
-		Replacement: rc.Name,
-		TargetLabel: "job",
-	})
-
 	jobName := fmt.Sprintf("run-gmp-sidecar-%d", index)
 
 	return endpointScrapeConfig(
 		jobName,
+		rc.Name,
 		rc.Spec.Endpoints[index],
 		relabelCfgs,
 		rc.Spec.Limits,
@@ -320,7 +315,7 @@ func relabelingsForMetadata(keys map[string]struct{}, env *CloudRunEnvironment) 
 	return res
 }
 
-func endpointScrapeConfig(id string, ep ScrapeEndpoint, relabelCfgs []*relabel.Config, limits *ScrapeLimits, env *CloudRunEnvironment) (*promconfig.ScrapeConfig, error) {
+func endpointScrapeConfig(id, cfgName string, ep ScrapeEndpoint, relabelCfgs []*relabel.Config, limits *ScrapeLimits, env *CloudRunEnvironment) (*promconfig.ScrapeConfig, error) {
 	if env == nil {
 		return nil, fmt.Errorf("metadata from Cloud Run was not found")
 	}
@@ -332,6 +327,11 @@ func endpointScrapeConfig(id string, ep ScrapeEndpoint, relabelCfgs []*relabel.C
 		},
 	}
 	relabelCfgs = append(relabelCfgs,
+		&relabel.Config{
+			Action:      relabel.Replace,
+			Replacement: cfgName,
+			TargetLabel: "job",
+		},
 		&relabel.Config{
 			Action:       relabel.Replace,
 			SourceLabels: prommodel.LabelNames{"__address__"},
