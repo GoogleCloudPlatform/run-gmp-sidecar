@@ -1,4 +1,4 @@
-FROM golang:1.20 as builder
+FROM golang:1.20.12 as builder
 WORKDIR /sidecar
 COPY . .
 
@@ -11,6 +11,7 @@ RUN make build
 
 FROM alpine:latest
 RUN apk add --no-cache ca-certificates
+RUN apk add openssl=3.1.4-r6 && apk upgrade openssl --no-cache
 COPY --from=builder /sidecar/bin/rungmpcol /rungmpcol
 COPY --from=builder /sidecar/bin/run-gmp-entrypoint /run-gmp-entrypoint
 
