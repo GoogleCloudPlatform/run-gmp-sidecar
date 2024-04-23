@@ -39,5 +39,5 @@ spec:
             port: 8000
         ports:
         - containerPort: 8000
-      - image: us-docker.pkg.dev/cloud-ops-agents-artifacts/cloud-run-gmp-sidecar/cloud-run-gmp-sidecar:1.0.0
+      - image: us-docker.pkg.dev/cloud-ops-agents-artifacts/cloud-run-gmp-sidecar/cloud-run-gmp-sidecar:1.1.1
         name: collector
