@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -34,6 +35,9 @@ var userConfigFile = "/etc/rungmp/config.yaml"
 var otelConfigFile = "/run/rungmp/otel.yaml"
 var configRefreshInterval = 20 * time.Second
 var selfMetricsPort = 0
+var livenessProbePort = 13133
+var livenessProbePath = "/liveness"
+var delayLivenessProbe = 5 * time.Second
 
 func getRawUserConfig(userConfigFile string) (string, error) {
 	_, err := os.Stat(userConfigFile)
@@ -84,6 +88,16 @@ func generateOtelConfig(ctx context.Context, userConfigFile string) error {
 	return nil
 }
 
+// The container is allocated CPU for the duration of the healthcheck. Delaying
+// the response to this probe allows the container to complete telemetry flushes
+// that may have been throttled.
+//
+// TODO(b/342463831): Use a more reliable way of checking if telemetry is being
+// flushed instead of using a static sleep.
+func healthcheckHandler(w http.ResponseWriter, r *http.Request) {
+	time.Sleep(delayLivenessProbe)
+}
+
 func main() {
 	// SIGINT handles Ctrl+C locally.
 	// SIGTERM handles Cloud Run termination signal.
@@ -100,6 +114,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	entrypointMux := http.NewServeMux()
+	entrypointMux.HandleFunc(livenessProbePath, healthcheckHandler)
+
+	go func() {
+		http.ListenAndServe(fmt.Sprintf(":%d", livenessProbePort), entrypointMux)
+	}()
 
 	// Spin up new-subprocess that runs the OTel collector and store the PID.
 	// This OTel collector should use the generated config.

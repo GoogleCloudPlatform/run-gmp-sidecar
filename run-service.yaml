@@ -23,32 +23,37 @@ spec:
     metadata:
       annotations:
         run.googleapis.com/execution-environment: gen2
-        run.googleapis.com/cpu-throttling: 'false'
         run.googleapis.com/container-dependencies: '{"collector":["app"]}'
-        run.googleapis.com/secrets: '%SECRET%:projects/%PROJECT%/secrets/%SECRET%'
+        run.googleapis.com/secrets: "%SECRET%:projects/%PROJECT%/secrets/%SECRET%"
     spec:
       containers:
-      - image: "%SAMPLE_APP_IMAGE%"
-        name: app
-        startupProbe:
-          httpGet:
-            path: /startup
-            port: 8000
-        livenessProbe:
-          httpGet:
-            path: /liveness
-            port: 8000
-        ports:
-        - containerPort: 8000
-      - image: "%OTELCOL_IMAGE%"
-        name: collector
-        volumeMounts:
-        - mountPath: /etc/rungmp/
-          name: config
+        - image: "%SAMPLE_APP_IMAGE%"
+          name: app
+          startupProbe:
+            httpGet:
+              path: /startup
+              port: 8000
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: 8000
+          ports:
+            - containerPort: 8000
+        - image: "%OTELCOL_IMAGE%"
+          name: collector
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: 13133
+            timeoutSeconds: 30
+            periodSeconds: 30
+          volumeMounts:
+            - mountPath: /etc/rungmp/
+              name: config
       volumes:
-      - name: config
-        secret:
-          items:
-          - key: latest
-            path: config.yaml
-          secretName: '%SECRET%'
+        - name: config
+          secret:
+            items:
+              - key: latest
+                path: config.yaml
+            secretName: "%SECRET%"
