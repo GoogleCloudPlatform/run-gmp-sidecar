@@ -94,7 +94,7 @@ func generateOtelConfig(ctx context.Context, userConfigFile string) error {
 //
 // TODO(b/342463831): Use a more reliable way of checking if telemetry is being
 // flushed instead of using a static sleep.
-func healthcheckHandler(w http.ResponseWriter, r *http.Request) {
+func healthcheckHandler(_ http.ResponseWriter, _ *http.Request) {
 	time.Sleep(delayLivenessProbe)
 }
 
@@ -119,7 +119,10 @@ func main() {
 	entrypointMux.HandleFunc(livenessProbePath, healthcheckHandler)
 
 	go func() {
-		http.ListenAndServe(fmt.Sprintf(":%d", livenessProbePort), entrypointMux)
+		err := http.ListenAndServe(fmt.Sprintf(":%d", livenessProbePort), entrypointMux)
+		if err != nil && err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
 	}()
 
 	// Spin up new-subprocess that runs the OTel collector and store the PID.
