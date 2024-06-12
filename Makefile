@@ -43,7 +43,7 @@ update-components:
 		grep "^github.com/open-telemetry/opentelemetry-collector-contrib" | \
 		xargs -t -I '{}' go get {}@$(OTEL_VER)
 	go mod tidy
-	cd $(TOOLS_DIR) && go get -u github.com/open-telemetry/opentelemetry-collector-contrib/cmd/mdatagen
+	cd $(TOOLS_DIR) && go get -u go.opentelemetry.io/collector/cmd/mdatagen@$(OTEL_VER)
 	cd $(TOOLS_DIR) && go mod tidy
 
 # We can bring this target back when https://github.com/open-telemetry/opentelemetry-collector/issues/8063 is resolved.
@@ -63,7 +63,9 @@ install-tools:
 			github.com/client9/misspell/cmd/misspell \
 			github.com/golangci/golangci-lint/cmd/golangci-lint \
 			github.com/google/addlicense \
-			github.com/open-telemetry/opentelemetry-collector-contrib/cmd/mdatagen
+			go.opentelemetry.io/collector/cmd/mdatagen \
+			github.com/google/googet/goopack \
+			golang.org/x/tools/cmd/goimports
 
 .PHONY: addlicense
 addlicense:
