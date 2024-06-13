@@ -1,4 +1,4 @@
-FROM golang:1.21.0 as builder
+FROM golang:1.21.11 as builder
 WORKDIR /sidecar
 COPY . .
 
