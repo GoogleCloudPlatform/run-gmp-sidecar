@@ -24,13 +24,8 @@ import (
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/featuregate"
 	"go.opentelemetry.io/collector/receiver"
-)
 
-// This file implements config for Prometheus receiver.
-
-const (
-	typeStr   = "prometheus"
-	stability = component.StabilityLevelBeta
+	"github.com/GoogleCloudPlatform/run-gmp-sidecar/collector/receiver/prometheusreceiver/internal/metadata"
 )
 
 var useCreatedMetricGate = featuregate.GlobalRegistry().MustRegister(
@@ -45,9 +40,9 @@ var errRenamingDisallowed = errors.New("metric renaming using metric_relabel_con
 // NewFactory creates a new Prometheus receiver factory.
 func NewFactory() receiver.Factory {
 	return receiver.NewFactory(
-		typeStr,
+		metadata.Type,
 		createDefaultConfig,
-		receiver.WithMetrics(createMetricsReceiver, stability))
+		receiver.WithMetrics(createMetricsReceiver, metadata.MetricsStability))
 }
 
 func createDefaultConfig() component.Config {

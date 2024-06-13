@@ -1,0 +1,8 @@
+type: prometheus
+scope_name: otelcol/prometheusreceiver
+
+status:
+  class: receiver
+  stability:
+    beta: [metrics]
+  distributions: [core, contrib]

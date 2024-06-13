@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	Type = component.MustNewType("googlemanagedprometheus")
+	Type = component.MustNewType("prometheus")
 )
 
 const (
