@@ -15,6 +15,7 @@
 package collector_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -24,7 +25,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/GoogleCloudPlatform/run-gmp-sidecar/confgenerator"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
@@ -190,11 +193,24 @@ func (collector *testCollector) Collect(ch chan<- prometheus.Metric) {
 }
 
 type PrometheusDataSender struct {
+	testbed.DataSender
+	consumer.Metrics
+
 	PromCollector prometheus.Collector
 	Path          string
 	Port          int
 
 	server *http.Server
+}
+
+func (p *PrometheusDataSender) Capabilities() consumer.Capabilities {
+	return consumer.Capabilities{
+		MutatesData: true,
+	}
+}
+
+func (p *PrometheusDataSender) ConsumeMetrics(ctx context.Context, md pmetric.Metrics) error {
+	return nil
 }
 
 func NewPrometheusDataSender(path string, port int, promCollector prometheus.Collector) *PrometheusDataSender {
@@ -352,11 +368,13 @@ func contains(s []int, e int) bool {
 }
 
 func getAvailablePort(t *testing.T, excludePorts []int) int {
-	port := testbed.GetAvailablePort(t)
+	port, err := confgenerator.GetFreePort()
+	require.NoError(t, err)
 	for {
 		if !contains(excludePorts, port) {
 			return port
 		}
-		port = testbed.GetAvailablePort(t)
+		port, err = confgenerator.GetFreePort()
+		require.NoError(t, err)
 	}
 }

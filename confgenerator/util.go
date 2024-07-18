@@ -105,7 +105,6 @@ func contains(s []string, str string) bool {
 // as that is a curated label that is added in a processor (later in the
 // pipeline) - so its not available during relabeling in the receiver.
 var protectedLabels = []string{
-	"project_id",
 	"location",
 	"cluster",
 	"namespace",

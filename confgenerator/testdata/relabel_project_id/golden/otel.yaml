@@ -14,7 +14,7 @@ processors:
         - otelcol_process_memory_rss
         - otelcol_grpc_io_client_completed_rpcs
         - otelcol_googlecloudmonitoring_point_count
-  groupbyattrs/application-metrics_2:
+  groupbyattrs/application-metrics_3:
     keys:
     - namespace
     - cluster
@@ -78,7 +78,12 @@ processors:
       statements:
       - replace_pattern(resource.attributes["service.instance.id"], "^(\\d+)$$", Concat([resource.attributes["faas.id"],
         "$$1"], ":"))
-  transform/application-metrics_3:
+  transform/application-metrics_2:
+    metric_statements:
+      context: datapoint
+      statements:
+      - set(attributes["instanceId"], resource.attributes["faas.id"])
+  transform/application-metrics_4:
     metric_statements:
       context: datapoint
       statements:
@@ -100,10 +105,9 @@ receivers:
       scrape_configs:
       - job_name: run-gmp-sidecar-0
         honor_timestamps: false
-        scrape_interval: 1m
-        scrape_timeout: 1m
+        scrape_interval: 10s
+        scrape_timeout: 10s
         metrics_path: /metrics
-        sample_limit: 1000
         follow_redirects: false
         enable_http2: false
         http_headers: null
@@ -112,8 +116,16 @@ receivers:
           target_label: service_name
           replacement: test_service
           action: replace
+        - source_labels: [__address__]
+          target_label: revision_name
+          replacement: test_revision
+          action: replace
+        - source_labels: [__address__]
+          target_label: configuration_name
+          replacement: test_configuration
+          action: replace
         - target_label: job
-          replacement: run-run-run
+          replacement: mycollector
           action: replace
         - source_labels: [__address__]
           target_label: cluster
@@ -126,6 +138,10 @@ receivers:
         - source_labels: [__address__]
           target_label: instance
           replacement: "8080"
+          action: replace
+        metric_relabel_configs:
+        - source_labels: [some_label]
+          target_label: project_id
           action: replace
         static_configs:
         - targets:
@@ -155,8 +171,9 @@ service:
       processors:
       - resourcedetection/application-metrics_0
       - transform/application-metrics_1
-      - groupbyattrs/application-metrics_2
-      - transform/application-metrics_3
+      - transform/application-metrics_2
+      - groupbyattrs/application-metrics_3
+      - transform/application-metrics_4
       receivers:
       - prometheus/application-metrics
     metrics/run-gmp-self-metrics:

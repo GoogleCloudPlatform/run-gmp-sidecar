@@ -6,3 +6,14 @@ status:
   stability:
     beta: [metrics]
   distributions: [core, contrib]
+
+tests:
+  config:
+    config:
+      scrape_configs:
+        - job_name: 'test'
+  goleak:
+    ignore:
+      top:
+        # See https://github.com/census-instrumentation/opencensus-go/issues/1191 for more information.
+        - "go.opencensus.io/stats/view.(*worker).start"

@@ -217,6 +217,10 @@ func (rc *RunMonitoringConfig) OTelReceiverPipeline() (*otel.ReceiverPipeline, e
 	// Group by the GMP attributes.
 	processors = append(processors, otel.GroupByGMPAttrs())
 
+	// If the user updates the `project_id` label, we need to update the gcp.project.id resource attribute
+	// so the exporter can pick it up.
+	processors = append(processors, otel.TransformationMetrics(otel.GroupByAttribute("gcp.project.id", "project_id"), otel.DeleteMetricAttribute("project_id")))
+
 	return &otel.ReceiverPipeline{
 		Receiver: otel.Component{
 			Type: "prometheus",
