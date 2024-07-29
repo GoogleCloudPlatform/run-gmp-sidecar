@@ -368,13 +368,11 @@ func contains(s []int, e int) bool {
 }
 
 func getAvailablePort(t *testing.T, excludePorts []int) int {
-	port, err := confgenerator.GetFreePort()
-	require.NoError(t, err)
 	for {
+		port, err := confgenerator.GetFreePort()
+		require.NoError(t, err)
 		if !contains(excludePorts, port) {
 			return port
 		}
-		port, err = confgenerator.GetFreePort()
-		require.NoError(t, err)
 	}
 }
