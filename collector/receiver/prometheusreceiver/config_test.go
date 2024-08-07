@@ -26,6 +26,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap/confmaptest"
+
+	"github.com/GoogleCloudPlatform/run-gmp-sidecar/collector/receiver/prometheusreceiver/internal/metadata"
 )
 
 func TestLoadConfig(t *testing.T) {
@@ -34,14 +36,14 @@ func TestLoadConfig(t *testing.T) {
 	factory := NewFactory()
 	cfg := factory.CreateDefaultConfig()
 
-	sub, err := cm.Sub(component.NewIDWithName(typeStr, "").String())
+	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
 	require.NoError(t, component.UnmarshalConfig(sub, cfg))
 
 	r0 := cfg.(*Config)
 	assert.Equal(t, r0, factory.CreateDefaultConfig())
 
-	sub, err = cm.Sub(component.NewIDWithName(typeStr, "customname").String())
+	sub, err = cm.Sub(component.NewIDWithName(metadata.Type, "customname").String())
 	require.NoError(t, err)
 	require.NoError(t, component.UnmarshalConfig(sub, cfg))
 
@@ -66,7 +68,7 @@ func TestLoadTargetAllocatorConfig(t *testing.T) {
 	factory := NewFactory()
 	cfg := factory.CreateDefaultConfig()
 
-	sub, err := cm.Sub(component.NewIDWithName(typeStr, "").String())
+	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
 	require.NoError(t, component.UnmarshalConfig(sub, cfg))
 
@@ -76,7 +78,7 @@ func TestLoadTargetAllocatorConfig(t *testing.T) {
 	assert.Equal(t, 30*time.Second, r0.TargetAllocator.Interval)
 	assert.Equal(t, "collector-1", r0.TargetAllocator.CollectorID)
 
-	sub, err = cm.Sub(component.NewIDWithName(typeStr, "withScrape").String())
+	sub, err = cm.Sub(component.NewIDWithName(metadata.Type, "withScrape").String())
 	require.NoError(t, err)
 	cfg = factory.CreateDefaultConfig()
 	require.NoError(t, component.UnmarshalConfig(sub, cfg))
@@ -91,7 +93,7 @@ func TestLoadTargetAllocatorConfig(t *testing.T) {
 	assert.Equal(t, "demo", r1.PrometheusConfig.ScrapeConfigs[0].JobName)
 	assert.Equal(t, promModel.Duration(5*time.Second), r1.PrometheusConfig.ScrapeConfigs[0].ScrapeInterval)
 
-	sub, err = cm.Sub(component.NewIDWithName(typeStr, "withOnlyScrape").String())
+	sub, err = cm.Sub(component.NewIDWithName(metadata.Type, "withOnlyScrape").String())
 	require.NoError(t, err)
 	cfg = factory.CreateDefaultConfig()
 	require.NoError(t, component.UnmarshalConfig(sub, cfg))
@@ -108,7 +110,7 @@ func TestLoadConfigFailsOnUnknownSection(t *testing.T) {
 	factory := NewFactory()
 	cfg := factory.CreateDefaultConfig()
 
-	sub, err := cm.Sub(component.NewIDWithName(typeStr, "").String())
+	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
 	require.Error(t, component.UnmarshalConfig(sub, cfg))
 }
@@ -122,7 +124,7 @@ func TestLoadConfigFailsOnUnknownPrometheusSection(t *testing.T) {
 	factory := NewFactory()
 	cfg := factory.CreateDefaultConfig()
 
-	sub, err := cm.Sub(component.NewIDWithName(typeStr, "").String())
+	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
 	require.Error(t, component.UnmarshalConfig(sub, cfg))
 }
@@ -134,7 +136,7 @@ func TestLoadConfigFailsOnRenameDisallowed(t *testing.T) {
 	factory := NewFactory()
 	cfg := factory.CreateDefaultConfig()
 
-	sub, err := cm.Sub(component.NewIDWithName(typeStr, "").String())
+	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
 	require.NoError(t, component.UnmarshalConfig(sub, cfg))
 	assert.Error(t, component.ValidateConfig(cfg))
@@ -147,7 +149,7 @@ func TestRejectUnsupportedPrometheusFeatures(t *testing.T) {
 	factory := NewFactory()
 	cfg := factory.CreateDefaultConfig()
 
-	sub, err := cm.Sub(component.NewIDWithName(typeStr, "").String())
+	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
 	require.NoError(t, component.UnmarshalConfig(sub, cfg))
 
@@ -172,7 +174,7 @@ func TestNonExistentAuthCredentialsFile(t *testing.T) {
 	factory := NewFactory()
 	cfg := factory.CreateDefaultConfig()
 
-	sub, err := cm.Sub(component.NewIDWithName(typeStr, "").String())
+	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
 	require.NoError(t, component.UnmarshalConfig(sub, cfg))
 
@@ -191,7 +193,7 @@ func TestTLSConfigNonExistentCertFile(t *testing.T) {
 	factory := NewFactory()
 	cfg := factory.CreateDefaultConfig()
 
-	sub, err := cm.Sub(component.NewIDWithName(typeStr, "").String())
+	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
 	require.NoError(t, component.UnmarshalConfig(sub, cfg))
 
@@ -210,7 +212,7 @@ func TestTLSConfigNonExistentKeyFile(t *testing.T) {
 	factory := NewFactory()
 	cfg := factory.CreateDefaultConfig()
 
-	sub, err := cm.Sub(component.NewIDWithName(typeStr, "").String())
+	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
 	require.NoError(t, component.UnmarshalConfig(sub, cfg))
 
@@ -229,7 +231,7 @@ func TestTLSConfigCertFileWithoutKeyFile(t *testing.T) {
 	factory := NewFactory()
 	cfg := factory.CreateDefaultConfig()
 
-	sub, err := cm.Sub(component.NewIDWithName(typeStr, "").String())
+	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
 	err = component.UnmarshalConfig(sub, cfg)
 	if assert.Error(t, err) {
@@ -243,7 +245,7 @@ func TestTLSConfigKeyFileWithoutCertFile(t *testing.T) {
 	factory := NewFactory()
 	cfg := factory.CreateDefaultConfig()
 
-	sub, err := cm.Sub(component.NewIDWithName(typeStr, "").String())
+	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
 	err = component.UnmarshalConfig(sub, cfg)
 	if assert.Error(t, err) {
@@ -257,7 +259,7 @@ func TestKubernetesSDConfigWithoutKeyFile(t *testing.T) {
 	factory := NewFactory()
 	cfg := factory.CreateDefaultConfig()
 
-	sub, err := cm.Sub(component.NewIDWithName(typeStr, "").String())
+	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
 	err = component.UnmarshalConfig(sub, cfg)
 	if assert.Error(t, err) {
@@ -271,7 +273,7 @@ func TestFileSDConfigJsonNilTargetGroup(t *testing.T) {
 	factory := NewFactory()
 	cfg := factory.CreateDefaultConfig()
 
-	sub, err := cm.Sub(component.NewIDWithName(typeStr, "").String())
+	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
 	require.NoError(t, component.UnmarshalConfig(sub, cfg))
 
@@ -290,7 +292,7 @@ func TestFileSDConfigYamlNilTargetGroup(t *testing.T) {
 	factory := NewFactory()
 	cfg := factory.CreateDefaultConfig()
 
-	sub, err := cm.Sub(component.NewIDWithName(typeStr, "").String())
+	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
 	require.NoError(t, component.UnmarshalConfig(sub, cfg))
 
