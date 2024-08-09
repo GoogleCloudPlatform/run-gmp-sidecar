@@ -179,6 +179,16 @@ func FlattenResourceAttribute(resourceAttribute, metricAttribute string) Transfo
 	return TransformQuery(fmt.Sprintf(`set(attributes["%s"], resource.attributes["%s"])`, metricAttribute, resourceAttribute))
 }
 
+// GroupByAttribute returns an expression that makes a metric attribute into a resource attribute.
+func GroupByAttribute(resourceAttribute, metricAttribute string) TransformQuery {
+	return TransformQuery(fmt.Sprintf(`set(resource.attributes["%s"], attributes["%s"]) where attributes["%s"] != nil`, resourceAttribute, metricAttribute, metricAttribute))
+}
+
+// DeleteMetricAttribute returns an expression that removes the metric attribute specified.
+func DeleteMetricAttribute(metricAttribute string) TransformQuery {
+	return TransformQuery(fmt.Sprintf(`delete_key(attributes, "%s")`, metricAttribute))
+}
+
 // PrefixResourceAttribute prefixes the resource attribute with another resource
 // attribute.
 //
