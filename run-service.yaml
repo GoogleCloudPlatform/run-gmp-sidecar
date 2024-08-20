@@ -17,7 +17,7 @@ kind: Service
 metadata:
   annotations:
     run.googleapis.com/launch-stage: ALPHA
-  name: my-cloud-run-service
+  name: monitoring-fetch-aws-metrics-118
 spec:
   template:
     metadata:
@@ -25,10 +25,11 @@ spec:
         run.googleapis.com/execution-environment: gen2
         run.googleapis.com/cpu-throttling: 'false'
         run.googleapis.com/container-dependencies: '{"collector":["app"]}'
-        run.googleapis.com/secrets: '%SECRET%:projects/%PROJECT%/secrets/%SECRET%'
+        run.googleapis.com/secrets: 'run-gmp-config:projects/510705180703/secrets/run-gmp-config'
     spec:
+      serviceAccountName: monitoring-metrics-setup@ctd-pi-ads-mgmt-prod.iam.gserviceaccount.com
       containers:
-      - image: "%SAMPLE_APP_IMAGE%"
+      - image: "us-central1-docker.pkg.dev/ctd-pi-ads-mgmt-prod/run-gmp/sample-app"
         name: app
         startupProbe:
           httpGet:
@@ -40,7 +41,7 @@ spec:
             port: 8000
         ports:
         - containerPort: 8000
-      - image: "%OTELCOL_IMAGE%"
+      - image: us-docker.pkg.dev/cloud-ops-agents-artifacts/cloud-run-gmp-sidecar/cloud-run-gmp-sidecar:1.1.1
         name: collector
         volumeMounts:
         - mountPath: /etc/rungmp/
@@ -51,4 +52,4 @@ spec:
           items:
           - key: latest
             path: config.yaml
-          secretName: '%SECRET%'
+          secretName: run-gmp-config
