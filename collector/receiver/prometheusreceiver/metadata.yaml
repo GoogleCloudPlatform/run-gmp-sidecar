@@ -1,14 +1,17 @@
-type: googlemanagedprometheus
-scope_name: otelcol/googlemanagedprometheus
+type: prometheus
+scope_name: otelcol/prometheusreceiver
 
 status:
-  class: exporter
+  class: receiver
   stability:
     beta: [metrics]
-  distributions: [contrib, observiq]
+  distributions: [core, contrib]
 
 tests:
-  skip_lifecycle: true
+  config:
+    config:
+      scrape_configs:
+        - job_name: 'test'
   goleak:
     ignore:
       top:

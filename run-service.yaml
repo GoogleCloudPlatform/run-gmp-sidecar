@@ -23,7 +23,6 @@ spec:
     metadata:
       annotations:
         run.googleapis.com/execution-environment: gen2
-        run.googleapis.com/cpu-throttling: 'false'
         run.googleapis.com/container-dependencies: '{"collector":["app"]}'
         run.googleapis.com/secrets: 'run-gmp-config:projects/510705180703/secrets/run-gmp-config'
     spec:

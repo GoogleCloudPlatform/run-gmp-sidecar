@@ -23,21 +23,22 @@ spec:
     metadata:
       annotations:
         run.googleapis.com/execution-environment: gen2
-        run.googleapis.com/cpu-throttling: 'false'
+        run.googleapis.com/cpu-throttling: "false"
         run.googleapis.com/container-dependencies: '{"collector":["app"]}'
     spec:
       containers:
-      - image: "%SAMPLE_APP_IMAGE%"
-        name: app
-        startupProbe:
-          httpGet:
-            path: /startup
-            port: 8000
-        livenessProbe:
-          httpGet:
-            path: /liveness
-            port: 8000
-        ports:
-        - containerPort: 8000
-      - image: us-docker.pkg.dev/cloud-ops-agents-artifacts/cloud-run-gmp-sidecar/cloud-run-gmp-sidecar:1.1.1
-        name: collector
+        - image: "%SAMPLE_APP_IMAGE%"
+          name: app
+          startupProbe:
+            httpGet:
+              path: /startup
+              port: 8000
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: 8000
+          ports:
+            - containerPort: 8000
+        - image: us-docker.pkg.dev/cloud-ops-agents-artifacts/cloud-run-gmp-sidecar/cloud-run-gmp-sidecar:1.1.1
+          name: collector
+          # TODO(b/342463134): Post release 1.2.0, update the collector container to use the healthcheck endpoint

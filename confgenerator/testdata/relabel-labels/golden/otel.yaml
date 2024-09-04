@@ -83,6 +83,13 @@ processors:
       context: datapoint
       statements:
       - set(attributes["instanceId"], resource.attributes["faas.id"])
+  transform/application-metrics_4:
+    metric_statements:
+      context: datapoint
+      statements:
+      - set(resource.attributes["gcp.project.id"], attributes["project_id"]) where
+        attributes["project_id"] != nil
+      - delete_key(attributes, "project_id")
   transform/run-gmp-self-metrics_3:
     metric_statements:
       context: datapoint
@@ -103,6 +110,7 @@ receivers:
         metrics_path: /metrics
         follow_redirects: false
         enable_http2: false
+        http_headers: null
         relabel_configs:
         - source_labels: [__address__]
           target_label: service_name
@@ -165,6 +173,7 @@ service:
       - transform/application-metrics_1
       - transform/application-metrics_2
       - groupbyattrs/application-metrics_3
+      - transform/application-metrics_4
       receivers:
       - prometheus/application-metrics
     metrics/run-gmp-self-metrics:
