@@ -18,8 +18,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/GoogleCloudPlatform/run-gmp-sidecar/collector/receiver/prometheusreceiver/internal"
-
 	"github.com/prometheus/common/model"
 	promConfig "github.com/prometheus/prometheus/config"
 	"github.com/stretchr/testify/assert"
@@ -1455,6 +1453,19 @@ func verifyUntypedMetrics(t *testing.T, td *testData, resourceMetrics []pmetric.
 	wantAttributes := td.attributes
 	metrics1 := m1.ScopeMetrics().At(0).Metrics()
 	ts1 := getTS(metrics1)
+
+	// The 2 metrics in m1 are untyped. The internal scraper metrics are not.
+	unknownMetricCount := 0
+	for i := 0; i < metrics1.Len(); i++ {
+		m := metrics1.At(i)
+		mType, ok := m.Metadata().Get("prometheus.type")
+		assert.True(t, ok)
+		if mType.Str() == string(model.MetricTypeUnknown) {
+			unknownMetricCount++
+		}
+	}
+	assert.Equal(t, 2, unknownMetricCount)
+
 	e1 := []testExpectation{
 		assertMetricPresent("http_requests_total",
 			compareMetricType(pmetric.MetricTypeGauge),
@@ -1463,14 +1474,14 @@ func verifyUntypedMetrics(t *testing.T, td *testData, resourceMetrics []pmetric.
 					numberPointComparator: []numberPointComparator{
 						compareTimestamp(ts1),
 						compareDoubleValue(100),
-						compareAttributes(map[string]string{"method": "post", "code": "200", internal.GCPOpsAgentUntypedMetricKey: "true"}),
+						compareAttributes(map[string]string{"method": "post", "code": "200"}),
 					},
 				},
 				{
 					numberPointComparator: []numberPointComparator{
 						compareTimestamp(ts1),
 						compareDoubleValue(5),
-						compareAttributes(map[string]string{"method": "post", "code": "400", internal.GCPOpsAgentUntypedMetricKey: "true"}),
+						compareAttributes(map[string]string{"method": "post", "code": "400"}),
 					},
 				},
 			}),
@@ -1481,14 +1492,14 @@ func verifyUntypedMetrics(t *testing.T, td *testData, resourceMetrics []pmetric.
 					numberPointComparator: []numberPointComparator{
 						compareTimestamp(ts1),
 						compareDoubleValue(10),
-						compareAttributes(map[string]string{"name": "rough-snowflake-web", "port": "6380", internal.GCPOpsAgentUntypedMetricKey: "true"}),
+						compareAttributes(map[string]string{"name": "rough-snowflake-web", "port": "6380"}),
 					},
 				},
 				{
 					numberPointComparator: []numberPointComparator{
 						compareTimestamp(ts1),
 						compareDoubleValue(12),
-						compareAttributes(map[string]string{"name": "rough-snowflake-web", "port": "6381", internal.GCPOpsAgentUntypedMetricKey: "true"}),
+						compareAttributes(map[string]string{"name": "rough-snowflake-web", "port": "6381"}),
 					},
 				},
 			}),

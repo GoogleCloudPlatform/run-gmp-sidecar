@@ -38,14 +38,14 @@ func TestLoadConfig(t *testing.T) {
 
 	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
-	require.NoError(t, component.UnmarshalConfig(sub, cfg))
+	require.NoError(t, sub.Unmarshal(cfg))
 
 	r0 := cfg.(*Config)
 	assert.Equal(t, r0, factory.CreateDefaultConfig())
 
 	sub, err = cm.Sub(component.NewIDWithName(metadata.Type, "customname").String())
 	require.NoError(t, err)
-	require.NoError(t, component.UnmarshalConfig(sub, cfg))
+	require.NoError(t, sub.Unmarshal(cfg))
 
 	r1 := cfg.(*Config)
 	assert.Equal(t, r1.PrometheusConfig.ScrapeConfigs[0].JobName, "demo")
@@ -70,7 +70,7 @@ func TestLoadTargetAllocatorConfig(t *testing.T) {
 
 	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
-	require.NoError(t, component.UnmarshalConfig(sub, cfg))
+	require.NoError(t, sub.Unmarshal(cfg))
 
 	r0 := cfg.(*Config)
 	assert.NotNil(t, r0.PrometheusConfig)
@@ -81,7 +81,7 @@ func TestLoadTargetAllocatorConfig(t *testing.T) {
 	sub, err = cm.Sub(component.NewIDWithName(metadata.Type, "withScrape").String())
 	require.NoError(t, err)
 	cfg = factory.CreateDefaultConfig()
-	require.NoError(t, component.UnmarshalConfig(sub, cfg))
+	require.NoError(t, sub.Unmarshal(cfg))
 
 	r1 := cfg.(*Config)
 	assert.NotNil(t, r0.PrometheusConfig)
@@ -96,7 +96,7 @@ func TestLoadTargetAllocatorConfig(t *testing.T) {
 	sub, err = cm.Sub(component.NewIDWithName(metadata.Type, "withOnlyScrape").String())
 	require.NoError(t, err)
 	cfg = factory.CreateDefaultConfig()
-	require.NoError(t, component.UnmarshalConfig(sub, cfg))
+	require.NoError(t, sub.Unmarshal(cfg))
 
 	r2 := cfg.(*Config)
 	assert.Equal(t, 1, len(r2.PrometheusConfig.ScrapeConfigs))
@@ -112,7 +112,7 @@ func TestLoadConfigFailsOnUnknownSection(t *testing.T) {
 
 	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
-	require.Error(t, component.UnmarshalConfig(sub, cfg))
+	require.Error(t, sub.Unmarshal(cfg))
 }
 
 // As one of the config parameters is consuming prometheus
@@ -126,7 +126,7 @@ func TestLoadConfigFailsOnUnknownPrometheusSection(t *testing.T) {
 
 	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
-	require.Error(t, component.UnmarshalConfig(sub, cfg))
+	require.Error(t, sub.Unmarshal(cfg))
 }
 
 // Renaming is not allowed
@@ -138,7 +138,7 @@ func TestLoadConfigFailsOnRenameDisallowed(t *testing.T) {
 
 	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
-	require.NoError(t, component.UnmarshalConfig(sub, cfg))
+	require.NoError(t, sub.Unmarshal(cfg))
 	assert.Error(t, component.ValidateConfig(cfg))
 
 }
@@ -151,7 +151,7 @@ func TestRejectUnsupportedPrometheusFeatures(t *testing.T) {
 
 	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
-	require.NoError(t, component.UnmarshalConfig(sub, cfg))
+	require.NoError(t, sub.Unmarshal(cfg))
 
 	err = component.ValidateConfig(cfg)
 	require.NotNil(t, err, "Expected a non-nil error")
@@ -176,7 +176,7 @@ func TestNonExistentAuthCredentialsFile(t *testing.T) {
 
 	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
-	require.NoError(t, component.UnmarshalConfig(sub, cfg))
+	require.NoError(t, sub.Unmarshal(cfg))
 
 	err = component.ValidateConfig(cfg)
 	require.NotNil(t, err, "Expected a non-nil error")
@@ -195,7 +195,7 @@ func TestTLSConfigNonExistentCertFile(t *testing.T) {
 
 	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
-	require.NoError(t, component.UnmarshalConfig(sub, cfg))
+	require.NoError(t, sub.Unmarshal(cfg))
 
 	err = component.ValidateConfig(cfg)
 	require.NotNil(t, err, "Expected a non-nil error")
@@ -214,7 +214,7 @@ func TestTLSConfigNonExistentKeyFile(t *testing.T) {
 
 	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
-	require.NoError(t, component.UnmarshalConfig(sub, cfg))
+	require.NoError(t, sub.Unmarshal(cfg))
 
 	err = component.ValidateConfig(cfg)
 	require.NotNil(t, err, "Expected a non-nil error")
@@ -233,7 +233,7 @@ func TestTLSConfigCertFileWithoutKeyFile(t *testing.T) {
 
 	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
-	err = component.UnmarshalConfig(sub, cfg)
+	err = sub.Unmarshal(cfg)
 	if assert.Error(t, err) {
 		assert.Contains(t, err.Error(), "exactly one of key or key_file must be configured when a client certificate is configured")
 	}
@@ -247,7 +247,7 @@ func TestTLSConfigKeyFileWithoutCertFile(t *testing.T) {
 
 	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
-	err = component.UnmarshalConfig(sub, cfg)
+	err = sub.Unmarshal(cfg)
 	if assert.Error(t, err) {
 		assert.Contains(t, err.Error(), "exactly one of cert or cert_file must be configured when a client key is configured")
 	}
@@ -261,7 +261,7 @@ func TestKubernetesSDConfigWithoutKeyFile(t *testing.T) {
 
 	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
-	err = component.UnmarshalConfig(sub, cfg)
+	err = sub.Unmarshal(cfg)
 	if assert.Error(t, err) {
 		assert.Contains(t, err.Error(), "exactly one of key or key_file must be configured when a client certificate is configured")
 	}
@@ -275,7 +275,7 @@ func TestFileSDConfigJsonNilTargetGroup(t *testing.T) {
 
 	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
-	require.NoError(t, component.UnmarshalConfig(sub, cfg))
+	require.NoError(t, sub.Unmarshal(cfg))
 
 	err = component.ValidateConfig(cfg)
 	require.NotNil(t, err, "Expected a non-nil error")
@@ -294,7 +294,7 @@ func TestFileSDConfigYamlNilTargetGroup(t *testing.T) {
 
 	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
-	require.NoError(t, component.UnmarshalConfig(sub, cfg))
+	require.NoError(t, sub.Unmarshal(cfg))
 
 	err = component.ValidateConfig(cfg)
 	require.NotNil(t, err, "Expected a non-nil error")

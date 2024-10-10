@@ -225,7 +225,6 @@ func (rc *RunMonitoringConfig) OTelReceiverPipeline() (*otel.ReceiverPipeline, e
 		Receiver: otel.Component{
 			Type: "prometheus",
 			Config: map[string]interface{}{
-				"preserve_untyped":                  true,
 				"use_start_time_metric":             true,
 				"use_collector_start_time_fallback": true,
 				"allow_cumulative_resets":           true,

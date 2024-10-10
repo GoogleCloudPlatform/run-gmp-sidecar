@@ -229,7 +229,7 @@ func TestTargetAllocatorJobRetrieval(t *testing.T) {
 				},
 			},
 			cfg: &Config{
-				PrometheusConfig: &promConfig.Config{},
+				PrometheusConfig: &promConfig.Config{GlobalConfig: promConfig.DefaultGlobalConfig},
 				TargetAllocator: &targetAllocator{
 					Interval:    10 * time.Second,
 					CollectorID: "collector-1",
@@ -323,7 +323,7 @@ func TestTargetAllocatorJobRetrieval(t *testing.T) {
 				},
 			},
 			cfg: &Config{
-				PrometheusConfig: &promConfig.Config{},
+				PrometheusConfig: &promConfig.Config{GlobalConfig: promConfig.DefaultGlobalConfig},
 				TargetAllocator: &targetAllocator{
 					Interval:    10 * time.Second,
 					CollectorID: "collector-1",
@@ -435,7 +435,7 @@ func TestTargetAllocatorJobRetrieval(t *testing.T) {
 				},
 			},
 			cfg: &Config{
-				PrometheusConfig: &promConfig.Config{},
+				PrometheusConfig: &promConfig.Config{GlobalConfig: promConfig.DefaultGlobalConfig},
 				TargetAllocator: &targetAllocator{
 					Interval:    10 * time.Second,
 					CollectorID: "collector-1",
@@ -477,7 +477,7 @@ func TestTargetAllocatorJobRetrieval(t *testing.T) {
 				},
 			},
 			cfg: &Config{
-				PrometheusConfig: &promConfig.Config{},
+				PrometheusConfig: &promConfig.Config{GlobalConfig: promConfig.DefaultGlobalConfig},
 				TargetAllocator: &targetAllocator{
 					Interval:    50 * time.Millisecond,
 					CollectorID: "collector-1",
@@ -504,9 +504,12 @@ func TestTargetAllocatorJobRetrieval(t *testing.T) {
 			defer allocator.Stop()
 
 			tc.cfg.TargetAllocator.Endpoint = allocator.srv.URL // set service URL with the automatic generated one
-			receiver := newPrometheusReceiver(receivertest.NewNopCreateSettings(), tc.cfg, cms)
+			receiver := newPrometheusReceiver(receivertest.NewNopSettings(), tc.cfg, cms)
 
 			require.NoError(t, receiver.Start(ctx, componenttest.NewNopHost()))
+			t.Cleanup(func() {
+				require.NoError(t, receiver.Shutdown(context.Background()))
+			})
 
 			allocator.wg.Wait()
 
