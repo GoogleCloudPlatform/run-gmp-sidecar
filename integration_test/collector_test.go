@@ -262,7 +262,6 @@ func (p *PrometheusDataSender) GenConfigYAMLStr() string {
 	// Note that this generates a receiver config for agent.
 	return fmt.Sprintf(`
   prometheus:
-    preserve_untyped: true
     allow_cumulative_resets: true
     use_collector_start_time_fallback: true
     use_start_time_metric: true

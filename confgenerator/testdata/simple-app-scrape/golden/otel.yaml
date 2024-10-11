@@ -105,44 +105,55 @@ receivers:
       scrape_configs:
       - job_name: run-gmp-sidecar-0
         honor_timestamps: false
+        track_timestamps_staleness: false
         scrape_interval: 1m
         scrape_timeout: 1m
+        scrape_protocols:
+        - OpenMetricsText1.0.0
+        - OpenMetricsText0.0.1
+        - PrometheusText0.0.4
         metrics_path: /metrics
+        enable_compression: false
         follow_redirects: false
         enable_http2: false
-        http_headers: null
         relabel_configs:
         - source_labels: [__address__]
+          regex: null
           target_label: service_name
           replacement: test_service
           action: replace
         - source_labels: [__address__]
+          regex: null
           target_label: revision_name
           replacement: test_revision
           action: replace
         - source_labels: [__address__]
+          regex: null
           target_label: configuration_name
           replacement: test_configuration
           action: replace
-        - target_label: job
+        - regex: null
+          target_label: job
           replacement: run-run-run
           action: replace
         - source_labels: [__address__]
+          regex: null
           target_label: cluster
           replacement: __run__
           action: replace
         - source_labels: [__address__]
+          regex: null
           target_label: namespace
           replacement: test_service
           action: replace
         - source_labels: [__address__]
+          regex: null
           target_label: instance
           replacement: "8080"
           action: replace
         static_configs:
         - targets:
           - 0.0.0.0:8080
-    preserve_untyped: true
     use_collector_start_time_fallback: true
     use_start_time_metric: true
   prometheus/run-gmp-self-metrics:

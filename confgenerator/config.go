@@ -400,6 +400,7 @@ func endpointScrapeConfig(id, cfgName string, ep ScrapeEndpoint, relabelCfgs []*
 		ScrapeTimeout:           timeout,
 		RelabelConfigs:          relabelCfgs,
 		MetricRelabelConfigs:    metricRelabelCfgs,
+		ScrapeProtocols:         promconfig.DefaultScrapeProtocols,
 	}
 	if limits != nil {
 		scrapeCfg.SampleLimit = uint(limits.Samples)
@@ -407,6 +408,10 @@ func endpointScrapeConfig(id, cfgName string, ep ScrapeEndpoint, relabelCfgs []*
 		scrapeCfg.LabelNameLengthLimit = uint(limits.LabelNameLength)
 		scrapeCfg.LabelValueLengthLimit = uint(limits.LabelValueLength)
 	}
+	if err := scrapeCfg.Validate(promconfig.DefaultGlobalConfig); err != nil {
+		return nil, fmt.Errorf("invalid scrape config: %w", err)
+	}
+
 	// The Prometheus configuration structs do not generally have validation methods and embed their
 	// validation logic in the UnmarshalYAML methods. To keep things reasonable we don't re-validate
 	// everything and simply do a final marshal-unmarshal cycle at the end to run all validation

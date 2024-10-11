@@ -51,6 +51,11 @@ require (
 )
 
 require (
+	github.com/prometheus/common v0.60.0
+	go.opentelemetry.io/collector/component/componentstatus v0.111.0
+)
+
+require (
 	cloud.google.com/go/auth v0.7.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.3 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.13.0 // indirect
@@ -131,7 +136,6 @@ require (
 	go.opentelemetry.io/collector v0.111.0 // indirect
 	go.opentelemetry.io/collector/client v1.17.0 // indirect
 	go.opentelemetry.io/collector/component/componentprofiles v0.111.0 // indirect
-	go.opentelemetry.io/collector/component/componentstatus v0.111.0 // indirect
 	go.opentelemetry.io/collector/config/configauth v0.111.0 // indirect
 	go.opentelemetry.io/collector/config/configcompression v1.17.0 // indirect
 	go.opentelemetry.io/collector/config/configgrpc v0.111.0 // indirect
@@ -196,8 +200,8 @@ require (
 	cloud.google.com/go/monitoring v1.20.2 // indirect
 	cloud.google.com/go/trace v1.10.10 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.24.1 // indirect
-	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.24.1 // indirect
-	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.48.1 // indirect
+	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.24.2 // indirect
+	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.48.2 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/Showmax/go-fqdn v1.0.0 // indirect
 	github.com/alecthomas/participle/v2 v2.1.1 // indirect
@@ -292,7 +296,6 @@ require (
 	github.com/power-devops/perfstat v0.0.0-20220216144756-c35f1ee13d7c // indirect
 	github.com/prometheus/client_golang v1.20.4
 	github.com/prometheus/client_model v0.6.1 // indirect
-	github.com/prometheus/common v0.60.0
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/prometheus/prometheus v1.8.2-0.20211119115433-692a54649ed7
@@ -349,5 +352,5 @@ require (
 // Currently causes build issues on windows. Downgrading to previous version.
 replace github.com/mattn/go-ieproxy v0.0.9 => github.com/mattn/go-ieproxy v0.0.1
 
-// TODO: Point this to feature/shutdownscrape_v0.54.1
-replace github.com/prometheus/prometheus => github.com/googleCloudPlatform/prometheus v0.0.0-20241008202057-cd41a3960d53
+// Point to our fork of Prometheus at branch: feature/shutdownscrape_v0.54.1
+replace github.com/prometheus/prometheus => github.com/googleCloudPlatform/prometheus v0.0.0-20241010204127-522fcab662ec
