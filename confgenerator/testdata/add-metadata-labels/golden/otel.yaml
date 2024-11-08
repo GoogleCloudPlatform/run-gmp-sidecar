@@ -117,8 +117,7 @@ receivers:
         follow_redirects: false
         enable_http2: false
         relabel_configs:
-        - source_labels: [__address__]
-          regex: null
+        - regex: null
           target_label: service_name
           replacement: test_service
           action: replace
@@ -126,18 +125,15 @@ receivers:
           target_label: job
           replacement: run-run-run
           action: replace
-        - source_labels: [__address__]
-          regex: null
+        - regex: null
           target_label: cluster
           replacement: __run__
           action: replace
-        - source_labels: [__address__]
-          regex: null
+        - regex: null
           target_label: namespace
           replacement: test_service
           action: replace
-        - source_labels: [__address__]
-          regex: null
+        - regex: null
           target_label: instance
           replacement: "8080"
           action: replace
