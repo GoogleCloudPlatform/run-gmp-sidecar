@@ -2,7 +2,6 @@ exporters:
   googlemanagedprometheus:
     metric:
       add_metric_suffixes: false
-    untyped_double_export: true
     user_agent: Google-Cloud-Run-GMP-Sidecar/latest; ShortName=run-gmp;ShortVersion=latest
 processors:
   filter/run-gmp-self-metrics_0:
@@ -12,17 +11,17 @@ processors:
         metric_names:
         - otelcol_process_uptime
         - otelcol_process_memory_rss
-        - otelcol_grpc_io_client_completed_rpcs
-        - otelcol_googlecloudmonitoring_point_count
+        - grpc_client_attempt_duration
+        - googlecloudmonitoring_point_count
   groupbyattrs/application-metrics_3:
     keys:
     - namespace
     - cluster
-  groupbyattrs/run-gmp-self-metrics_4:
+  groupbyattrs/run-gmp-self-metrics_5:
     keys:
     - namespace
     - cluster
-  metricstransform/run-gmp-self-metrics_1:
+  metricstransform/run-gmp-self-metrics_2:
     transforms:
     - action: update
       include: otelcol_process_uptime
@@ -44,10 +43,9 @@ processors:
         aggregation_type: sum
         label_set: []
     - action: update
-      include: otelcol_grpc_io_client_completed_rpcs
+      include: grpc_client_attempt_duration_count
       new_name: agent/api_request_count
       operations:
-      - action: toggle_scalar_data_type
       - action: update_label
         label: grpc_client_status
         new_label: state
@@ -56,7 +54,7 @@ processors:
         label_set:
         - state
     - action: update
-      include: otelcol_googlecloudmonitoring_point_count
+      include: googlecloudmonitoring_point_count
       new_name: agent/monitoring/point_count
       operations:
       - action: toggle_scalar_data_type
@@ -68,31 +66,37 @@ processors:
     detectors:
     - gcp
     - env
-  resourcedetection/run-gmp-self-metrics_2:
+  resourcedetection/run-gmp-self-metrics_3:
     detectors:
     - gcp
     - env
   transform/application-metrics_1:
     metric_statements:
-      context: datapoint
+    - context: datapoint
       statements:
       - replace_pattern(resource.attributes["service.instance.id"], "^(\\d+)$$", Concat([resource.attributes["faas.id"],
         "$$1"], ":"))
   transform/application-metrics_2:
     metric_statements:
-      context: datapoint
+    - context: datapoint
       statements:
       - set(attributes["instanceId"], resource.attributes["faas.id"])
   transform/application-metrics_4:
     metric_statements:
-      context: datapoint
+    - context: datapoint
       statements:
       - set(resource.attributes["gcp.project.id"], attributes["project_id"]) where
         attributes["project_id"] != nil
       - delete_key(attributes, "project_id")
-  transform/run-gmp-self-metrics_3:
+  transform/run-gmp-self-metrics_1:
+    error_mode: ignore
     metric_statements:
-      context: datapoint
+    - context: metric
+      statements:
+      - extract_count_metric(true) where name == "grpc_client_attempt_duration"
+  transform/run-gmp-self-metrics_4:
+    metric_statements:
+    - context: datapoint
       statements:
       - set(attributes["namespace"], "test_service")
       - set(attributes["cluster"], "__run__")
@@ -188,10 +192,11 @@ service:
       - googlemanagedprometheus
       processors:
       - filter/run-gmp-self-metrics_0
-      - metricstransform/run-gmp-self-metrics_1
-      - resourcedetection/run-gmp-self-metrics_2
-      - transform/run-gmp-self-metrics_3
-      - groupbyattrs/run-gmp-self-metrics_4
+      - transform/run-gmp-self-metrics_1
+      - metricstransform/run-gmp-self-metrics_2
+      - resourcedetection/run-gmp-self-metrics_3
+      - transform/run-gmp-self-metrics_4
+      - groupbyattrs/run-gmp-self-metrics_5
       receivers:
       - prometheus/run-gmp-self-metrics
   telemetry:

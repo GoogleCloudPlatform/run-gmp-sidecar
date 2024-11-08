@@ -1,4 +1,4 @@
-FROM golang:1.21.11 as builder
+FROM golang:1.22.7 as builder
 WORKDIR /sidecar
 COPY . .
 
@@ -10,6 +10,7 @@ RUN apt update && apt install -y make
 RUN make build
 
 FROM alpine:latest
+RUN apk update && apk upgrade
 RUN apk add --no-cache ca-certificates
 COPY --from=builder /sidecar/bin/rungmpcol /rungmpcol
 COPY --from=builder /sidecar/bin/run-gmp-entrypoint /run-gmp-entrypoint
