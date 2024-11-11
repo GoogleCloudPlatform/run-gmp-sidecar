@@ -39,6 +39,11 @@ spec:
               port: 8000
           ports:
             - containerPort: 8000
-        - image: us-docker.pkg.dev/cloud-ops-agents-artifacts/cloud-run-gmp-sidecar/cloud-run-gmp-sidecar:1.1.1
+        - image: us-docker.pkg.dev/cloud-ops-agents-artifacts/cloud-run-gmp-sidecar/cloud-run-gmp-sidecar:1.2.0
           name: collector
-          # TODO(b/342463134): Post release 1.2.0, update the collector container to use the healthcheck endpoint
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: 13133
+            timeoutSeconds: 30
+            periodSeconds: 30
