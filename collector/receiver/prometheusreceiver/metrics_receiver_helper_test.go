@@ -595,13 +595,12 @@ func testComponent(t *testing.T, targets []*testData, useStartTimeMetric bool, s
 	defer mp.Close()
 
 	cms := new(consumertest.MetricsSink)
-	receiver := newPrometheusReceiver(receivertest.NewNopCreateSettings(), &Config{
+	receiver := newPrometheusReceiver(receivertest.NewNopSettings(), &Config{
 		PrometheusConfig: cfg,
 		AdjusterOpts: MetricAdjusterOpts{
 			UseStartTimeMetric:   useStartTimeMetric,
 			StartTimeMetricRegex: startTimeMetricRegex,
 		},
-		PreserveUntyped:    true, // This adds a metric label for untyped metrics. Enabling this allows testing for it.
 		TrimMetricSuffixes: trimMetricSuffixes,
 	}, cms)
 

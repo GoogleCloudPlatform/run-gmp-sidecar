@@ -40,7 +40,7 @@ func TestCreateReceiver(t *testing.T) {
 
 	// The default config does not provide scrape_config so we expect that metrics receiver
 	// creation must also fail.
-	creationSet := receivertest.NewNopCreateSettings()
+	creationSet := receivertest.NewNopSettings()
 	mReceiver, _ := createMetricsReceiver(context.Background(), creationSet, cfg, nil)
 	assert.NotNil(t, mReceiver)
 	assert.NotNil(t, mReceiver.(*pReceiver).cfg.PrometheusConfig.GlobalConfig)
@@ -54,5 +54,5 @@ func TestFactoryCanParseServiceDiscoveryConfigs(t *testing.T) {
 
 	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
-	assert.NoError(t, component.UnmarshalConfig(sub, cfg))
+	assert.NoError(t, sub.Unmarshal(cfg))
 }

@@ -158,13 +158,16 @@ func TransformationMetrics(queries ...TransformQuery) Component {
 	for _, q := range queries {
 		queryStrings = append(queryStrings, string(q))
 	}
+	datapointStatements := []map[string]any{
+		{
+			"context":    "datapoint",
+			"statements": queryStrings,
+		},
+	}
 	return Component{
 		Type: "transform",
-		Config: map[string]map[string]interface{}{
-			"metric_statements": {
-				"context":    "datapoint",
-				"statements": queryStrings,
-			},
+		Config: map[string]any{
+			"metric_statements": datapointStatements,
 		},
 	}
 }
@@ -203,4 +206,31 @@ func PrefixResourceAttribute(destResourceAttribute, srcResourceAttribute, delimi
 // AddMetricLabel adds a new metric attribute. If it already exists, then it is overwritten.
 func AddMetricLabel(key, val string) TransformQuery {
 	return TransformQuery(fmt.Sprintf(`set(attributes["%s"], "%s")`, key, val))
+}
+
+// Transform returns a transform processor object that executes statements on statementType data.
+func Transform(statementType, context string, statements []string) Component {
+	return Component{
+		Type: "transform",
+		Config: map[string]any{
+			"error_mode": "ignore",
+			fmt.Sprintf("%s_statements", statementType): []map[string]any{
+				{
+					"context":    context,
+					"statements": statements,
+				},
+			},
+		},
+	}
+}
+
+// ExtractCountMetric creates a new metric based on the count value of a Histogram metric
+func ExtractCountMetric(monotonic bool, metricName string) []string {
+	monotonicStr := "false"
+	if monotonic {
+		monotonicStr = "true"
+	}
+	return []string{
+		fmt.Sprintf(`extract_count_metric(%s) where name == "%s"`, monotonicStr, metricName),
+	}
 }

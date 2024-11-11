@@ -54,8 +54,7 @@ func googleManagedPrometheusExporter(userAgent string) otel.Component {
 	return otel.Component{
 		Type: "googlemanagedprometheus",
 		Config: map[string]interface{}{
-			"user_agent":            userAgent,
-			"untyped_double_export": true,
+			"user_agent": userAgent,
 			// The exporter has the config option addMetricSuffixes with default value true. It will add Prometheus
 			// style suffixes to metric names, e.g., `_total` for a counter; set to false to collect metrics as is
 			"metric": map[string]interface{}{

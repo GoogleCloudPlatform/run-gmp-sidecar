@@ -32,21 +32,19 @@ type appendable struct {
 	metricAdjuster       MetricsAdjuster
 	useStartTimeMetric   bool
 	trimSuffixes         bool
-	preserveUntyped      bool
 	startTimeMetricRegex *regexp.Regexp
 	externalLabels       labels.Labels
 
-	settings receiver.CreateSettings
+	settings receiver.Settings
 	obsrecv  *receiverhelper.ObsReport
 }
 
 // NewAppendable returns a storage.Appendable instance that emits metrics to the sink.
 func NewAppendable(
 	sink consumer.Metrics,
-	set receiver.CreateSettings,
+	set receiver.Settings,
 	gcInterval time.Duration,
 	useStartTimeMetric bool,
-	preserveUntyped bool,
 	startTimeMetricRegex *regexp.Regexp,
 	useCreatedMetric bool,
 	useCollectorStartTimeFallback bool,
@@ -74,10 +72,9 @@ func NewAppendable(
 		startTimeMetricRegex: startTimeMetricRegex,
 		externalLabels:       externalLabels,
 		obsrecv:              obsrecv,
-		preserveUntyped:      preserveUntyped,
 	}, nil
 }
 
 func (o *appendable) Appender(ctx context.Context) storage.Appender {
-	return newTransaction(ctx, o.metricAdjuster, o.sink, o.externalLabels, o.settings, o.obsrecv, o.trimSuffixes, o.preserveUntyped)
+	return newTransaction(ctx, o.metricAdjuster, o.sink, o.externalLabels, o.settings, o.obsrecv, o.trimSuffixes)
 }

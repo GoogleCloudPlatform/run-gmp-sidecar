@@ -17,8 +17,6 @@ package prometheusreceiver
 import (
 	"testing"
 
-	"github.com/GoogleCloudPlatform/run-gmp-sidecar/collector/receiver/prometheusreceiver/internal"
-
 	"github.com/prometheus/common/model"
 	promcfg "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/model/relabel"
@@ -146,7 +144,7 @@ func verifyRenameMetric(t *testing.T, td *testData, resourceMetrics []pmetric.Re
 					numberPointComparator: []numberPointComparator{
 						compareTimestamp(ts1),
 						compareDoubleValue(15),
-						compareAttributes(map[string]string{"method": "post", "port": "6380", internal.GCPOpsAgentUntypedMetricKey: "true"}),
+						compareAttributes(map[string]string{"method": "post", "port": "6380"}),
 					},
 				},
 			}),
@@ -158,14 +156,14 @@ func verifyRenameMetric(t *testing.T, td *testData, resourceMetrics []pmetric.Re
 					numberPointComparator: []numberPointComparator{
 						compareTimestamp(ts1),
 						compareDoubleValue(10),
-						compareAttributes(map[string]string{"method": "post", "port": "6380", internal.GCPOpsAgentUntypedMetricKey: "true"}),
+						compareAttributes(map[string]string{"method": "post", "port": "6380"}),
 					},
 				},
 				{
 					numberPointComparator: []numberPointComparator{
 						compareTimestamp(ts1),
 						compareDoubleValue(12),
-						compareAttributes(map[string]string{"method": "post", "port": "6381", internal.GCPOpsAgentUntypedMetricKey: "true"}),
+						compareAttributes(map[string]string{"method": "post", "port": "6381"}),
 					},
 				},
 			}),

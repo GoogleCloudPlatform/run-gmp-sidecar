@@ -23,7 +23,6 @@ import (
 
 	"github.com/prometheus/prometheus/model/exemplar"
 	"github.com/prometheus/prometheus/model/labels"
-	"github.com/prometheus/prometheus/model/textparse"
 	"github.com/prometheus/prometheus/model/value"
 	"github.com/prometheus/prometheus/scrape"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -36,14 +35,10 @@ import (
 const (
 	traceIDKey = "trace_id"
 	spanIDKey  = "span_id"
-
-	GCPOpsAgentUntypedMetricKey = "prometheus.googleapis.com/internal/untyped_metric"
 )
 
 type metricFamily struct {
-	mtype           pmetric.MetricType
-	preserveUntyped bool
-	pType           textparse.MetricType
+	mtype pmetric.MetricType
 	// isMonotonic only applies to sums
 	isMonotonic bool
 	groups      map[uint64]*metricGroup
@@ -56,22 +51,20 @@ type metricFamily struct {
 // a couple data complexValue (buckets and count/sum), a group of a metric family always share a same set of tags. for
 // simple types like counter and gauge, each data point is a group of itself
 type metricGroup struct {
-	mtype           pmetric.MetricType
-	preserveUntyped bool
-	pType           textparse.MetricType
-	ts              int64
-	ls              labels.Labels
-	count           float64
-	hasCount        bool
-	sum             float64
-	hasSum          bool
-	created         float64
-	value           float64
-	complexValue    []*dataPoint
-	exemplars       pmetric.ExemplarSlice
+	mtype        pmetric.MetricType
+	ts           int64
+	ls           labels.Labels
+	count        float64
+	hasCount     bool
+	sum          float64
+	hasSum       bool
+	created      float64
+	value        float64
+	complexValue []*dataPoint
+	exemplars    pmetric.ExemplarSlice
 }
 
-func newMetricFamily(metricName string, mc scrape.MetricMetadataStore, logger *zap.Logger, preserveUntyped bool) *metricFamily {
+func newMetricFamily(metricName string, mc scrape.MetricMetadataStore, logger *zap.Logger) *metricFamily {
 	metadata, familyName := metadataForMetric(metricName, mc)
 	mtype, isMonotonic := convToMetricType(metadata.Type)
 	if mtype == pmetric.MetricTypeEmpty {
@@ -79,13 +72,11 @@ func newMetricFamily(metricName string, mc scrape.MetricMetadataStore, logger *z
 	}
 
 	return &metricFamily{
-		mtype:           mtype,
-		pType:           metadata.Type,
-		isMonotonic:     isMonotonic,
-		groups:          make(map[uint64]*metricGroup),
-		name:            familyName,
-		metadata:        metadata,
-		preserveUntyped: preserveUntyped,
+		mtype:       mtype,
+		isMonotonic: isMonotonic,
+		groups:      make(map[uint64]*metricGroup),
+		name:        familyName,
+		metadata:    metadata,
 	}
 }
 
@@ -162,7 +153,7 @@ func (mg *metricGroup) toDistributionPoint(dest pmetric.HistogramDataPointSlice)
 		point.SetStartTimestamp(tsNanos)
 	}
 	point.SetTimestamp(tsNanos)
-	populateAttributes(pmetric.MetricTypeHistogram, mg.pType, mg.ls, point.Attributes(), mg.preserveUntyped)
+	populateAttributes(pmetric.MetricTypeHistogram, mg.ls, point.Attributes())
 	mg.setExemplars(point.Exemplars())
 }
 
@@ -221,7 +212,7 @@ func (mg *metricGroup) toSummaryPoint(dest pmetric.SummaryDataPointSlice) {
 		// metrics_adjuster adjusts the startTimestamp to the initial scrape timestamp
 		point.SetStartTimestamp(tsNanos)
 	}
-	populateAttributes(pmetric.MetricTypeSummary, mg.pType, mg.ls, point.Attributes(), mg.preserveUntyped)
+	populateAttributes(pmetric.MetricTypeSummary, mg.ls, point.Attributes())
 }
 
 func (mg *metricGroup) toNumberDataPoint(dest pmetric.NumberDataPointSlice) {
@@ -242,11 +233,11 @@ func (mg *metricGroup) toNumberDataPoint(dest pmetric.NumberDataPointSlice) {
 	} else {
 		point.SetDoubleValue(mg.value)
 	}
-	populateAttributes(pmetric.MetricTypeGauge, mg.pType, mg.ls, point.Attributes(), mg.preserveUntyped)
+	populateAttributes(pmetric.MetricTypeGauge, mg.ls, point.Attributes())
 	mg.setExemplars(point.Exemplars())
 }
 
-func populateAttributes(mType pmetric.MetricType, pType textparse.MetricType, ls labels.Labels, dest pcommon.Map, preserveUntyped bool) {
+func populateAttributes(mType pmetric.MetricType, ls labels.Labels, dest pcommon.Map) {
 	dest.EnsureCapacity(ls.Len())
 	names := getSortedNotUsefulLabels(mType)
 	j := 0
@@ -263,23 +254,16 @@ func populateAttributes(mType pmetric.MetricType, pType textparse.MetricType, ls
 		}
 		dest.PutStr(ls[i].Name, ls[i].Value)
 	}
-
-	// Preserve the untypedness of the metric as a metric attribute.
-	if preserveUntyped && (pType == textparse.MetricTypeUnknown) {
-		dest.PutBool(GCPOpsAgentUntypedMetricKey, true)
-	}
 }
 
 func (mf *metricFamily) loadMetricGroupOrCreate(groupKey uint64, ls labels.Labels, ts int64) *metricGroup {
 	mg, ok := mf.groups[groupKey]
 	if !ok {
 		mg = &metricGroup{
-			mtype:           mf.mtype,
-			pType:           mf.pType,
-			ts:              ts,
-			ls:              ls,
-			exemplars:       pmetric.NewExemplarSlice(),
-			preserveUntyped: mf.preserveUntyped,
+			mtype:     mf.mtype,
+			ts:        ts,
+			ls:        ls,
+			exemplars: pmetric.NewExemplarSlice(),
 		}
 		mf.groups[groupKey] = mg
 		// maintaining data insertion order is helpful to generate stable/reproducible metric output
@@ -334,6 +318,7 @@ func (mf *metricFamily) appendMetric(metrics pmetric.MetricSlice, trimSuffixes b
 	}
 	metric.SetName(name)
 	metric.SetDescription(mf.metadata.Help)
+	metric.Metadata().PutStr(prometheus.MetricMetadataTypeKey, string(mf.metadata.Type))
 	metric.SetUnit(mf.metadata.Unit)
 
 	pointCount := 0

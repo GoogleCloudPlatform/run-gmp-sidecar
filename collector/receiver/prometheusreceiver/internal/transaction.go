@@ -53,8 +53,7 @@ type transaction struct {
 	metricAdjuster MetricsAdjuster
 	obsrecv        *receiverhelper.ObsReport
 	// Used as buffer to calculate series ref hash.
-	bufBytes        []byte
-	preserveUntyped bool
+	bufBytes []byte
 }
 
 func newTransaction(
@@ -62,22 +61,20 @@ func newTransaction(
 	metricAdjuster MetricsAdjuster,
 	sink consumer.Metrics,
 	externalLabels labels.Labels,
-	settings receiver.CreateSettings,
+	settings receiver.Settings,
 	obsrecv *receiverhelper.ObsReport,
-	trimSuffixes bool,
-	preserveUntyped bool) *transaction {
+	trimSuffixes bool) *transaction {
 	return &transaction{
-		ctx:             ctx,
-		families:        make(map[string]*metricFamily),
-		isNew:           true,
-		trimSuffixes:    trimSuffixes,
-		sink:            sink,
-		metricAdjuster:  metricAdjuster,
-		externalLabels:  externalLabels,
-		logger:          settings.Logger,
-		obsrecv:         obsrecv,
-		bufBytes:        make([]byte, 0, 1024),
-		preserveUntyped: preserveUntyped,
+		ctx:            ctx,
+		families:       make(map[string]*metricFamily),
+		isNew:          true,
+		trimSuffixes:   trimSuffixes,
+		sink:           sink,
+		metricAdjuster: metricAdjuster,
+		externalLabels: externalLabels,
+		logger:         settings.Logger,
+		obsrecv:        obsrecv,
+		bufBytes:       make([]byte, 0, 1024),
 	}
 }
 
@@ -149,7 +146,7 @@ func (t *transaction) getOrCreateMetricFamily(mn string) *metricFamily {
 		if mf, ok := t.families[fn]; ok && mf.includesMetric(mn) {
 			curMf = mf
 		} else {
-			curMf = newMetricFamily(mn, t.mc, t.logger, t.preserveUntyped)
+			curMf = newMetricFamily(mn, t.mc, t.logger)
 			t.families[curMf.name] = curMf
 		}
 	}
@@ -187,6 +184,11 @@ func (t *transaction) AppendExemplar(ref storage.SeriesRef, l labels.Labels, e e
 }
 
 func (t *transaction) AppendHistogram(ref storage.SeriesRef, l labels.Labels, atMs int64, h *histogram.Histogram, fh *histogram.FloatHistogram) (storage.SeriesRef, error) {
+	//TODO: implement this func
+	return 0, nil
+}
+
+func (t *transaction) AppendCTZeroSample(_ storage.SeriesRef, _ labels.Labels, _, _ int64) (storage.SeriesRef, error) {
 	//TODO: implement this func
 	return 0, nil
 }

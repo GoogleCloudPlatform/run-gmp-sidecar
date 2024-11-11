@@ -225,7 +225,6 @@ func (rc *RunMonitoringConfig) OTelReceiverPipeline() (*otel.ReceiverPipeline, e
 		Receiver: otel.Component{
 			Type: "prometheus",
 			Config: map[string]interface{}{
-				"preserve_untyped":                  true,
 				"use_start_time_metric":             true,
 				"use_collector_start_time_fallback": true,
 				"allow_cumulative_resets":           true,
@@ -294,26 +293,23 @@ func relabelingsForMetadata(keys map[string]struct{}, env *CloudRunEnvironment) 
 
 	if _, ok := keys["service"]; ok {
 		res = append(res, &relabel.Config{
-			Action:       relabel.Replace,
-			SourceLabels: prommodel.LabelNames{"__address__"},
-			Replacement:  env.Service,
-			TargetLabel:  cloudRunServiceLabel,
+			Action:      relabel.Replace,
+			Replacement: env.Service,
+			TargetLabel: cloudRunServiceLabel,
 		})
 	}
 	if _, ok := keys["revision"]; ok {
 		res = append(res, &relabel.Config{
-			Action:       relabel.Replace,
-			SourceLabels: prommodel.LabelNames{"__address__"},
-			Replacement:  env.Revision,
-			TargetLabel:  cloudRunRevisionLabel,
+			Action:      relabel.Replace,
+			Replacement: env.Revision,
+			TargetLabel: cloudRunRevisionLabel,
 		})
 	}
 	if _, ok := keys["configuration"]; ok {
 		res = append(res, &relabel.Config{
-			Action:       relabel.Replace,
-			SourceLabels: prommodel.LabelNames{"__address__"},
-			Replacement:  env.Configuration,
-			TargetLabel:  cloudRunConfigurationLabel,
+			Action:      relabel.Replace,
+			Replacement: env.Configuration,
+			TargetLabel: cloudRunConfigurationLabel,
 		})
 	}
 	return res
@@ -337,16 +333,14 @@ func endpointScrapeConfig(id, cfgName string, ep ScrapeEndpoint, relabelCfgs []*
 			TargetLabel: "job",
 		},
 		&relabel.Config{
-			Action:       relabel.Replace,
-			SourceLabels: prommodel.LabelNames{"__address__"},
-			TargetLabel:  "cluster",
-			Replacement:  "__run__",
+			Action:      relabel.Replace,
+			TargetLabel: "cluster",
+			Replacement: "__run__",
 		},
 		&relabel.Config{
-			Action:       relabel.Replace,
-			SourceLabels: prommodel.LabelNames{"__address__"},
-			TargetLabel:  "namespace",
-			Replacement:  env.Service,
+			Action:      relabel.Replace,
+			TargetLabel: "namespace",
+			Replacement: env.Service,
 		},
 		// The `instance` label will be <faas.id>:<port> in the final metric.
 		// But since <faas.id> is unavailable until the gcp resource detector
@@ -355,10 +349,9 @@ func endpointScrapeConfig(id, cfgName string, ep ScrapeEndpoint, relabelCfgs []*
 		// See the usage of PrefixResourceAttribute for when the rest of the
 		// instance label is filled in.
 		&relabel.Config{
-			Action:       relabel.Replace,
-			SourceLabels: prommodel.LabelNames{"__address__"},
-			TargetLabel:  "instance",
-			Replacement:  ep.Port,
+			Action:      relabel.Replace,
+			TargetLabel: "instance",
+			Replacement: ep.Port,
 		},
 	)
 
@@ -401,6 +394,7 @@ func endpointScrapeConfig(id, cfgName string, ep ScrapeEndpoint, relabelCfgs []*
 		ScrapeTimeout:           timeout,
 		RelabelConfigs:          relabelCfgs,
 		MetricRelabelConfigs:    metricRelabelCfgs,
+		ScrapeProtocols:         promconfig.DefaultScrapeProtocols,
 	}
 	if limits != nil {
 		scrapeCfg.SampleLimit = uint(limits.Samples)
@@ -408,6 +402,10 @@ func endpointScrapeConfig(id, cfgName string, ep ScrapeEndpoint, relabelCfgs []*
 		scrapeCfg.LabelNameLengthLimit = uint(limits.LabelNameLength)
 		scrapeCfg.LabelValueLengthLimit = uint(limits.LabelValueLength)
 	}
+	if err := scrapeCfg.Validate(promconfig.DefaultGlobalConfig); err != nil {
+		return nil, fmt.Errorf("invalid scrape config: %w", err)
+	}
+
 	// The Prometheus configuration structs do not generally have validation methods and embed their
 	// validation logic in the UnmarshalYAML methods. To keep things reasonable we don't re-validate
 	// everything and simply do a final marshal-unmarshal cycle at the end to run all validation

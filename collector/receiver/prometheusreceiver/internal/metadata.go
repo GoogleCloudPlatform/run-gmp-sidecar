@@ -15,7 +15,7 @@
 package internal // import "github.com/GoogleCloudPlatform/run-gmp-sidecar/collector/receiver/prometheusreceiver/internal"
 
 import (
-	"github.com/prometheus/prometheus/model/textparse"
+	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/scrape"
 )
 
@@ -28,28 +28,28 @@ type dataPoint struct {
 var internalMetricMetadata = map[string]*scrape.MetricMetadata{
 	scrapeUpMetricName: {
 		Metric: scrapeUpMetricName,
-		Type:   textparse.MetricTypeGauge,
+		Type:   model.MetricTypeGauge,
 		Help:   "The scraping was successful",
 	},
 	"scrape_duration_seconds": {
 		Metric: "scrape_duration_seconds",
 		Unit:   "seconds",
-		Type:   textparse.MetricTypeGauge,
+		Type:   model.MetricTypeGauge,
 		Help:   "Duration of the scrape",
 	},
 	"scrape_samples_scraped": {
 		Metric: "scrape_samples_scraped",
-		Type:   textparse.MetricTypeGauge,
+		Type:   model.MetricTypeGauge,
 		Help:   "The number of samples the target exposed",
 	},
 	"scrape_series_added": {
 		Metric: "scrape_series_added",
-		Type:   textparse.MetricTypeGauge,
+		Type:   model.MetricTypeGauge,
 		Help:   "The approximate number of new series in this scrape",
 	},
 	"scrape_samples_post_metric_relabeling": {
 		Metric: "scrape_samples_post_metric_relabeling",
-		Type:   textparse.MetricTypeGauge,
+		Type:   model.MetricTypeGauge,
 		Help:   "The number of samples remaining after metric relabeling was applied",
 	},
 }
@@ -65,7 +65,7 @@ func metadataForMetric(metricName string, mc scrape.MetricMetadataStore) (*scrap
 	// try with suffixes trimmed, in-case it is a "merged" metric type.
 	normalizedName := normalizeMetricName(metricName)
 	if metadata, ok := mc.GetMetadata(normalizedName); ok {
-		if metadata.Type == textparse.MetricTypeCounter {
+		if metadata.Type == model.MetricTypeCounter {
 			return &metadata, metricName
 		}
 		return &metadata, normalizedName
@@ -73,6 +73,6 @@ func metadataForMetric(metricName string, mc scrape.MetricMetadataStore) (*scrap
 	// Otherwise, the metric is unknown
 	return &scrape.MetricMetadata{
 		Metric: metricName,
-		Type:   textparse.MetricTypeUnknown,
+		Type:   model.MetricTypeUnknown,
 	}, metricName
 }

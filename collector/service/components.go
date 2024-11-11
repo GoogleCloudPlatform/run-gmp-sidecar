@@ -24,11 +24,10 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 	"go.opentelemetry.io/collector/exporter"
-	"go.opentelemetry.io/collector/exporter/loggingexporter"
+	"go.opentelemetry.io/collector/exporter/debugexporter"
 	"go.opentelemetry.io/collector/exporter/otlpexporter"
 	"go.opentelemetry.io/collector/exporter/otlphttpexporter"
 	"go.opentelemetry.io/collector/extension"
-	"go.opentelemetry.io/collector/extension/ballastextension"
 	"go.opentelemetry.io/collector/extension/zpagesextension"
 	"go.opentelemetry.io/collector/otelcol"
 	"go.opentelemetry.io/collector/processor"
@@ -109,7 +108,6 @@ func Components() (
 
 	extensions, err := extension.MakeFactoryMap(
 		zpagesextension.NewFactory(),
-		ballastextension.NewFactory(),
 	)
 	errs = multierr.Append(errs, err)
 
@@ -119,7 +117,7 @@ func Components() (
 	errs = multierr.Append(errs, err)
 
 	exporters, err := exporter.MakeFactoryMap(
-		loggingexporter.NewFactory(),
+		debugexporter.NewFactory(),
 		otlpexporter.NewFactory(),
 		otlphttpexporter.NewFactory(),
 	)

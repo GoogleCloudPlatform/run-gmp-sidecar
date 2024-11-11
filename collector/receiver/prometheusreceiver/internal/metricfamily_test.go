@@ -19,8 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
-	"github.com/prometheus/prometheus/model/textparse"
 	"github.com/prometheus/prometheus/model/value"
 	"github.com/prometheus/prometheus/scrape"
 	"github.com/stretchr/testify/require"
@@ -47,61 +47,61 @@ func (tmc testMetadataStore) LengthMetadata() int {
 var mc = testMetadataStore{
 	"counter": scrape.MetricMetadata{
 		Metric: "cr",
-		Type:   textparse.MetricTypeCounter,
+		Type:   model.MetricTypeCounter,
 		Help:   "This is some help for a counter",
 		Unit:   "By",
 	},
 	"gauge": scrape.MetricMetadata{
 		Metric: "ge",
-		Type:   textparse.MetricTypeGauge,
+		Type:   model.MetricTypeGauge,
 		Help:   "This is some help for a gauge",
 		Unit:   "1",
 	},
 	"gaugehistogram": scrape.MetricMetadata{
 		Metric: "gh",
-		Type:   textparse.MetricTypeGaugeHistogram,
+		Type:   model.MetricTypeGaugeHistogram,
 		Help:   "This is some help for a gauge histogram",
 		Unit:   "?",
 	},
 	"histogram": scrape.MetricMetadata{
 		Metric: "hg",
-		Type:   textparse.MetricTypeHistogram,
+		Type:   model.MetricTypeHistogram,
 		Help:   "This is some help for a histogram",
 		Unit:   "ms",
 	},
 	"histogram_with_created": scrape.MetricMetadata{
 		Metric: "hg",
-		Type:   textparse.MetricTypeHistogram,
+		Type:   model.MetricTypeHistogram,
 		Help:   "This is some help for a histogram",
 		Unit:   "ms",
 	},
 	"histogram_stale": scrape.MetricMetadata{
 		Metric: "hg_stale",
-		Type:   textparse.MetricTypeHistogram,
+		Type:   model.MetricTypeHistogram,
 		Help:   "This is some help for a histogram",
 		Unit:   "ms",
 	},
 	"summary": scrape.MetricMetadata{
 		Metric: "s",
-		Type:   textparse.MetricTypeSummary,
+		Type:   model.MetricTypeSummary,
 		Help:   "This is some help for a summary",
 		Unit:   "ms",
 	},
 	"summary_with_created": scrape.MetricMetadata{
 		Metric: "s",
-		Type:   textparse.MetricTypeSummary,
+		Type:   model.MetricTypeSummary,
 		Help:   "This is some help for a summary",
 		Unit:   "ms",
 	},
 	"summary_stale": scrape.MetricMetadata{
 		Metric: "s_stale",
-		Type:   textparse.MetricTypeSummary,
+		Type:   model.MetricTypeSummary,
 		Help:   "This is some help for a summary",
 		Unit:   "ms",
 	},
 	"unknown": scrape.MetricMetadata{
 		Metric: "u",
-		Type:   textparse.MetricTypeUnknown,
+		Type:   model.MetricTypeUnknown,
 		Help:   "This is some help for an unknown metric",
 		Unit:   "?",
 	},
@@ -234,7 +234,7 @@ func TestMetricGroupData_toDistributionUnitTest(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			mp := newMetricFamily(tt.metricName, mc, zap.NewNop(), true)
+			mp := newMetricFamily(tt.metricName, mc, zap.NewNop())
 			for i, tv := range tt.scrapes {
 				var lbls labels.Labels
 				if tv.extraLabel.Name != "" {
@@ -524,7 +524,7 @@ func TestMetricGroupData_toSummaryUnitTest(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			mp := newMetricFamily(tt.name, mc, zap.NewNop(), true)
+			mp := newMetricFamily(tt.name, mc, zap.NewNop())
 			for _, lbs := range tt.labelsScrapes {
 				for i, scrape := range lbs.scrapes {
 					lb := lbs.labels.Copy()
@@ -644,7 +644,7 @@ func TestMetricGroupData_toNumberDataUnitTest(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			mp := newMetricFamily(tt.metricKind, mc, zap.NewNop(), true)
+			mp := newMetricFamily(tt.metricKind, mc, zap.NewNop())
 			for _, tv := range tt.scrapes {
 				lb := tt.labels.Copy()
 				sRef, _ := getSeriesRef(nil, lb, mp.mtype)

@@ -83,12 +83,6 @@ type Config struct {
 	BufferPeriod       time.Duration      `mapstructure:"buffer_period"`
 	BufferCount        int                `mapstructure:"buffer_count"`
 
-	// PreserveUntyped is a setting that lets the collector preserve the untypedness of
-	// untyped metrics as a metric attribute. If set, all untyped prometheus metrics from
-	// this receiver will have an additional metric attribute called "prometheus_untyped_metric"
-	// that is a boolean value set to true.
-	PreserveUntyped bool `mapstructure:"preserve_untyped"`
-
 	TargetAllocator *targetAllocator `mapstructure:"target_allocator"`
 
 	// ConfigPlaceholder is just an entry to make the configuration pass a check
