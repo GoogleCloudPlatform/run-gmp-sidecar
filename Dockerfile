@@ -9,9 +9,12 @@ RUN go install github.com/client9/misspell/cmd/misspell@v0.3.4 \
 RUN apt update && apt install -y make
 RUN make build
 
-FROM alpine:latest
-RUN apk update && apk upgrade
-RUN apk add --no-cache ca-certificates
+FROM alpine:latest AS certs
+RUN apk --update add ca-certificates
+
+FROM scratch
+
+COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=builder /sidecar/bin/rungmpcol /rungmpcol
 COPY --from=builder /sidecar/bin/run-gmp-entrypoint /run-gmp-entrypoint
 
