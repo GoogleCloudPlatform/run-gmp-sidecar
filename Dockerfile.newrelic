@@ -1,0 +1,33 @@
+# Multi-stage Dockerfile for New Relic version of run-gmp-sidecar
+FROM golang:1.23.0 as builder
+
+WORKDIR /sidecar
+COPY . .
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y gettext-base make
+
+# Install Go tools needed for build
+RUN go install github.com/client9/misspell/cmd/misspell@v0.3.4 \
+    && go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.52.1 \
+    && go install github.com/google/addlicense@v1.0.0
+
+# Build the New Relic version
+RUN make build
+
+# Get certificates for HTTPS calls to New Relic
+FROM alpine:latest AS certs
+RUN apk --update add ca-certificates
+
+# Final minimal image
+FROM scratch
+
+# Copy certificates
+COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy built binaries
+COPY --from=builder /sidecar/bin/rungmpcol /rungmpcol
+COPY --from=builder /sidecar/bin/run-gmp-entrypoint /run-gmp-entrypoint
+
+# Use the entrypoint which will start the collector
+ENTRYPOINT ["/run-gmp-entrypoint"]

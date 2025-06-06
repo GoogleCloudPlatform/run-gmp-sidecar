@@ -41,7 +41,7 @@ func (rc *RunMonitoringConfig) GenerateOtelConfig(ctx context.Context, selfMetri
 
 	otelConfig, err := otel.ModularConfig{
 		ReceiverPipelines: receiverPipelines,
-		Exporter:          googleManagedPrometheusExporter(userAgent),
+		Exporter:          newRelicExporter(),
 		SelfMetricsPort:   selfMetricsPort,
 	}.Generate()
 	if err != nil {
@@ -59,6 +59,20 @@ func googleManagedPrometheusExporter(userAgent string) otel.Component {
 			// style suffixes to metric names, e.g., `_total` for a counter; set to false to collect metrics as is
 			"metric": map[string]interface{}{
 				"add_metric_suffixes": false,
+			},
+		},
+	}
+}
+
+func newRelicExporter() otel.Component {
+	return otel.Component{
+		Type: "newrelic",
+		Config: map[string]interface{}{
+			"api_key": "${NEW_RELIC_API_KEY}",
+			"common_attributes": map[string]interface{}{
+				"service.name": "${SERVICE_NAME:-run-gmp-sidecar}",
+				"service.version": "${SERVICE_VERSION:-1.0.0}",
+				"deployment.environment": "${ENVIRONMENT:-production}",
 			},
 		},
 	}

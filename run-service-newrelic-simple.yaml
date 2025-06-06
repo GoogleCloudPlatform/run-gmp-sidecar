@@ -1,0 +1,60 @@
+# Simple Cloud Run Service for New Relic (No Volume Mount!)
+# This is the minimal configuration - just your app + sidecar + API key
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: my-cloud-run-service-newrelic
+  annotations:
+    run.googleapis.com/execution-environment: gen2
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/cpu-throttling: "false"
+    spec:
+      containerConcurrency: 1000
+      timeoutSeconds: 300
+      containers:
+      # Your application container
+      - name: app
+        image: %SAMPLE_APP_IMAGE%
+        ports:
+        - containerPort: 8080
+        env:
+        - name: PORT
+          value: "8080"
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+            
+      # New Relic sidecar (minimal config!)
+      - name: newrelic-sidecar
+        image: %OTELCOL_IMAGE%
+        env:
+        # Required: New Relic API Key
+        - name: NEW_RELIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: newrelic-secrets
+              key: api_key
+        # Optional: Service identification
+        - name: SERVICE_NAME
+          value: "my-cloud-run-service"
+        - name: SERVICE_VERSION  
+          value: "1.0.0"
+        - name: ENVIRONMENT
+          value: "production"
+        resources:
+          limits:
+            cpu: 500m
+            memory: 256Mi
+        # Health check
+        livenessProbe:
+          httpGet:
+            path: /liveness
+            port: 13133
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        # No volume mounts needed! 🎉

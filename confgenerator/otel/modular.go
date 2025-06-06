@@ -86,11 +86,12 @@ func (c ModularConfig) Generate() (string, error) {
 		var processorNames []string
 		processorNames = append(processorNames, receiverProcessorNames...)
 
-		exporters["googlemanagedprometheus"] = c.Exporter.Config
+		exporterName := c.Exporter.Type
+		exporters[exporterName] = c.Exporter.Config
 		pipelines["metrics/"+key] = map[string]interface{}{
 			"receivers":  []string{receiverName},
 			"processors": processorNames,
-			"exporters":  []string{"googlemanagedprometheus"},
+			"exporters":  []string{exporterName},
 		}
 	}
 
