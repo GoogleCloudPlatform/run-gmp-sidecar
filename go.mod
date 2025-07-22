@@ -50,6 +50,7 @@ require (
 
 require (
 	github.com/prometheus/common v0.60.1
+	github.com/prometheus/otlptranslator v0.0.0-20250717125610-8549f4ab4f8f
 	go.opentelemetry.io/collector/component/componentstatus v0.113.0
 	go.opentelemetry.io/collector/confmap/provider/envprovider v1.19.0
 	go.opentelemetry.io/collector/confmap/provider/httpprovider v1.19.0
