@@ -25,32 +25,42 @@ TOOLS_DIR := collector/internal/tools
 #  Helper Commands
 # --------------------------
 
-.PHONY: update-components-old
-update-components-old:
-	grep -o github.com/open-telemetry/opentelemetry-collector-contrib/[[:lower:]]*/[[:lower:]]* go.mod | xargs -I '{}' go get {}
-	go mod tidy
-	cd $(TOOLS_DIR) && go get -u github.com/open-telemetry/opentelemetry-collector-contrib/cmd/mdatagen
-	cd $(TOOLS_DIR) && go mod tidy
+# The non-stable OpenTelemetry Collector version.
+OTEL_VERSION = v0.113.0
+# The OpenTelemetry Collector contrib repo version.
+# Equal to OTEL_VERSION most of the time, only deviates in rare cases.
+OTEL_CONTRIB_VERSION = v0.113.0
 
-OTEL_VER ?= latest
+DISTROGEN_BIN ?= distrogen
+LIST_DIRECT_MODULES = go list -m -f '{{if not (or .Indirect .Main)}}{{.Path}}{{end}}' all
+INCLUDE_COLLECTOR_CORE_COMPONENTS = grep "^go.opentelemetry.io" | grep -v "^go.opentelemetry.io/otel"
+INCLUDE_CONTRIB_COMPONENTS = grep "^github.com/open-telemetry/opentelemetry-collector-contrib"
+GO_GET_ALL = xargs --no-run-if-empty -t -I '{}' go get {}
+
 .PHONY: update-components
-update-components:
-	go list -m -f '{{if not (or .Indirect .Main)}}{{.Path}}{{end}}' all | \
-		grep "^go.opentelemetry.io" | \
-		xargs -t -I '{}' go get {}@$(OTEL_VER)
-	go get -u github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/collector/googlemanagedprometheus@latest
-	go list -m -f '{{if not (or .Indirect .Main)}}{{.Path}}{{end}}' all | \
-		grep "^github.com/open-telemetry/opentelemetry-collector-contrib" | \
-		xargs -t -I '{}' go get {}@$(OTEL_VER)
-	go mod tidy
-	cd $(TOOLS_DIR) && go get -u go.opentelemetry.io/collector/cmd/mdatagen@$(OTEL_VER)
-	cd $(TOOLS_DIR) && go mod tidy
+update-components: install-tools core-components contrib-components
 
-# We can bring this target back when https://github.com/open-telemetry/opentelemetry-collector/issues/8063 is resolved.
-update-opentelemetry:
-	$(MAKE) update-components
-	$(MAKE) install-tools
-	$(MAKE) GO_BUILD_TAGS=gpu generate
+.PHONY: core-components
+core-components:
+	$(LIST_DIRECT_MODULES) | \
+		$(INCLUDE_COLLECTOR_CORE_COMPONENTS) | \
+		$(DISTROGEN_BIN) otel_component_versions --otel_version $(OTEL_VERSION) | \
+		$(GO_GET_ALL)
+
+.PHONY: contrib-components
+contrib-components:
+	$(LIST_DIRECT_MODULES) | \
+		$(INCLUDE_CONTRIB_COMPONENTS) | \
+		$(GO_GET_ALL)@$(OTEL_CONTRIB_VERSION)
+
+.PHONY: update-mdatagen
+update-mdatagen:
+	cd $(TOOLS_DIR) && \
+		go get -u go.opentelemetry.io/collector/cmd/mdatagen@$(OTEL_VERSION) && \
+		go mod tidy
+
+.PHONY: update-opentelemetry
+update-opentelemetry: update-components update-mdatagen generate
 
 # --------------------------
 #  Tools
@@ -64,7 +74,8 @@ install-tools:
 			github.com/golangci/golangci-lint/cmd/golangci-lint \
 			github.com/google/addlicense \
 			go.opentelemetry.io/collector/cmd/mdatagen \
-			golang.org/x/tools/cmd/goimports
+			golang.org/x/tools/cmd/goimports \
+			github.com/GoogleCloudPlatform/opentelemetry-operations-collector/cmd/distrogen
 
 .PHONY: addlicense
 addlicense:
