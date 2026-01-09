@@ -103,7 +103,19 @@ func generateConfigs(testDir string) (got map[string]string, err error) {
 		}
 	}()
 
-	c, err := confgenerator.ReadConfigFromFile(ctx, filepath.Join("testdata", testDir, inputFileName))
+	portsEnv := ""
+	specEnv := ""
+	if strings.HasSuffix(testDir, "ports-env") {
+		portsEnv = "8080,9090,3030"
+	}
+	if strings.HasSuffix(testDir, "cfg-env") {
+		specEnv = `
+  endpoints:
+  - port: 8080
+    interval: 11s`
+	}
+
+	c, err := confgenerator.ReadConfigFromFile(ctx, filepath.Join("testdata", testDir, inputFileName), portsEnv, specEnv)
 	if err != nil {
 		return
 	}

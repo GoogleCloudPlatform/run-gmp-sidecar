@@ -1,0 +1,176 @@
+exporters:
+  googlemanagedprometheus:
+    metric:
+      add_metric_suffixes: false
+    untyped_double_export: true
+    user_agent: Google-Cloud-Run-GMP-Sidecar/latest; ShortName=run-gmp;ShortVersion=latest
+processors:
+  filter/run-gmp-self-metrics_0:
+    metrics:
+      include:
+        match_type: strict
+        metric_names:
+        - otelcol_process_uptime
+        - otelcol_process_memory_rss
+        - otelcol_grpc_io_client_completed_rpcs
+        - otelcol_googlecloudmonitoring_point_count
+  groupbyattrs/application-metrics_3:
+    keys:
+    - namespace
+    - cluster
+  groupbyattrs/run-gmp-self-metrics_4:
+    keys:
+    - namespace
+    - cluster
+  metricstransform/run-gmp-self-metrics_1:
+    transforms:
+    - action: update
+      include: otelcol_process_uptime
+      new_name: agent/uptime
+      operations:
+      - action: toggle_scalar_data_type
+      - action: add_label
+        new_label: version
+        new_value: run-gmp-sidecar@latest
+      - action: aggregate_labels
+        aggregation_type: sum
+        label_set:
+        - version
+    - action: update
+      include: otelcol_process_memory_rss
+      new_name: agent/memory_usage
+      operations:
+      - action: aggregate_labels
+        aggregation_type: sum
+        label_set: []
+    - action: update
+      include: otelcol_grpc_io_client_completed_rpcs
+      new_name: agent/api_request_count
+      operations:
+      - action: toggle_scalar_data_type
+      - action: update_label
+        label: grpc_client_status
+        new_label: state
+      - action: aggregate_labels
+        aggregation_type: sum
+        label_set:
+        - state
+    - action: update
+      include: otelcol_googlecloudmonitoring_point_count
+      new_name: agent/monitoring/point_count
+      operations:
+      - action: toggle_scalar_data_type
+      - action: aggregate_labels
+        aggregation_type: sum
+        label_set:
+        - status
+  resourcedetection/application-metrics_0:
+    detectors:
+    - gcp
+    - env
+  resourcedetection/run-gmp-self-metrics_2:
+    detectors:
+    - gcp
+    - env
+  transform/application-metrics_1:
+    metric_statements:
+      context: datapoint
+      statements:
+      - replace_pattern(resource.attributes["service.instance.id"], "^(\\d+)$$", Concat([resource.attributes["faas.id"],
+        "$$1"], ":"))
+  transform/application-metrics_2:
+    metric_statements:
+      context: datapoint
+      statements:
+      - set(attributes["instanceId"], resource.attributes["faas.id"])
+  transform/run-gmp-self-metrics_3:
+    metric_statements:
+      context: datapoint
+      statements:
+      - set(attributes["namespace"], "test_service")
+      - set(attributes["cluster"], "__run__")
+      - replace_pattern(resource.attributes["service.instance.id"], "^(\\d+)$$", Concat([resource.attributes["faas.id"],
+        "$$1"], ":"))
+receivers:
+  prometheus/application-metrics:
+    allow_cumulative_resets: true
+    config:
+      scrape_configs:
+      - job_name: run-gmp-sidecar
+        honor_timestamps: false
+        scrape_interval: 11s
+        scrape_timeout: 11s
+        metrics_path: /metrics
+        follow_redirects: false
+        enable_http2: false
+        relabel_configs:
+        - source_labels: [__address__]
+          target_label: service_name
+          replacement: test_service
+          action: replace
+        - source_labels: [__address__]
+          target_label: revision_name
+          replacement: test_revision
+          action: replace
+        - source_labels: [__address__]
+          target_label: configuration_name
+          replacement: test_configuration
+          action: replace
+        - source_labels: [__address__]
+          target_label: cluster
+          replacement: __run__
+          action: replace
+        - source_labels: [__address__]
+          target_label: namespace
+          replacement: test_service
+          action: replace
+        - source_labels: [__address__]
+          target_label: instance
+          replacement: "8080"
+          action: replace
+        static_configs:
+        - targets:
+          - 0.0.0.0:8080
+    preserve_untyped: true
+    use_collector_start_time_fallback: true
+    use_start_time_metric: true
+  prometheus/run-gmp-self-metrics:
+    config:
+      scrape_configs:
+      - job_name: run-gmp-sidecar-self-metrics
+        metric_relabel_configs:
+        - action: replace
+          replacement: "42"
+          source_labels:
+          - __address__
+          target_label: instance
+        scrape_interval: 1m
+        static_configs:
+        - targets:
+          - 0.0.0.0:42
+service:
+  pipelines:
+    metrics/application-metrics:
+      exporters:
+      - googlemanagedprometheus
+      processors:
+      - resourcedetection/application-metrics_0
+      - transform/application-metrics_1
+      - transform/application-metrics_2
+      - groupbyattrs/application-metrics_3
+      receivers:
+      - prometheus/application-metrics
+    metrics/run-gmp-self-metrics:
+      exporters:
+      - googlemanagedprometheus
+      processors:
+      - filter/run-gmp-self-metrics_0
+      - metricstransform/run-gmp-self-metrics_1
+      - resourcedetection/run-gmp-self-metrics_2
+      - transform/run-gmp-self-metrics_3
+      - groupbyattrs/run-gmp-self-metrics_4
+      receivers:
+      - prometheus/run-gmp-self-metrics
+  telemetry:
+    metrics:
+      address: 0.0.0.0:42
