@@ -15,8 +15,10 @@
 package tools
 
 import (
+	_ "github.com/GoogleCloudPlatform/opentelemetry-operations-collector/cmd/distrogen"
 	_ "github.com/client9/misspell/cmd/misspell"
 	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
 	_ "github.com/google/addlicense"
-	_ "github.com/open-telemetry/opentelemetry-collector-contrib/cmd/mdatagen"
+	_ "go.opentelemetry.io/collector/cmd/mdatagen"
+	_ "golang.org/x/tools/cmd/goimports"
 )

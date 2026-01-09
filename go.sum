@@ -951,6 +951,8 @@ go.opentelemetry.io/collector/confmap/provider/httpprovider v1.19.0 h1:a077jcs3D
 go.opentelemetry.io/collector/confmap/provider/httpprovider v1.19.0/go.mod h1:HjYkzhHbwUacv27nq0JLsslGpbtrXyyfU30Oc72AWLU=
 go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.17.0 h1:lI1uHXqTklVCFXgTPIKwUb8PTP/EpMF2VxwT48fQ54w=
 go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.17.0/go.mod h1:1Vhweh5dDeTUOmcw5WSGHPgHUwZzouf3y2dQr4yFWjA=
+go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.19.0 h1:8LoQxjlduFQUEwYuHWnxEj0A+GcAtpv2qPpDJVz7A5E=
+go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.19.0/go.mod h1:Y8ErEl5m9+1AWzWcMn52PATH5dw50wuyyPMffK62RCI=
 go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.19.0 h1:oV66DKiEdAt8EMZqGSChK2iEOxjrVaWRhf4OqqmqjbM=
 go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.19.0/go.mod h1:jtNUdO6i1k38BG7vFst+d1jk/N+c419uVR8HB4J0VjI=
 go.opentelemetry.io/collector/connector v0.113.0 h1:ii+s1CjsLxtglqRlFs6tv8UU/uX45dyN9lbTRbR0p8g=
@@ -1005,6 +1007,8 @@ go.opentelemetry.io/collector/otelcol v0.113.0 h1:t32gA8Pg9lsqYQml4mgvHdqFSsjvPZ
 go.opentelemetry.io/collector/otelcol v0.113.0/go.mod h1:PV6pDLPEaulRs3ceWYNEDuG5100F35I5VzeC2ekT/vY=
 go.opentelemetry.io/collector/otelcol/otelcoltest v0.112.0 h1:AdjoVnYl7RxoOvhWZcJb0SWY1VvlRT1cdlCwHBpn9vs=
 go.opentelemetry.io/collector/otelcol/otelcoltest v0.112.0/go.mod h1:VSbEYgmiSM5K6p501XD35QuhxbDpkxrfS2Wf5OKnHPs=
+go.opentelemetry.io/collector/otelcol/otelcoltest v0.113.0 h1:bfu9oQQbO6KEcpgh7muc1ixsGQs+qFWwi9LyabGILqw=
+go.opentelemetry.io/collector/otelcol/otelcoltest v0.113.0/go.mod h1:0bag/J2REbnIKKKHvYe0RqyjmsUv4OJH14kNef+lD4Q=
 go.opentelemetry.io/collector/pdata v1.19.0 h1:jmnU5R8TOCbwRr4B8sjdRxM7L5WnEKlQWX1dtLYxIbE=
 go.opentelemetry.io/collector/pdata v1.19.0/go.mod h1:Ox1YVLe87cZDB/TL30i4SUz1cA5s6AM6SpFMfY61ICs=
 go.opentelemetry.io/collector/pdata/pprofile v0.113.0 h1:VRf4p0VhfuaR+Epy/nMIlu/9t39WU9CUgHVUvpuGxfU=
