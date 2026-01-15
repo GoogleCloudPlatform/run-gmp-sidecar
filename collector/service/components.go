@@ -37,8 +37,8 @@ import (
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
 	"go.uber.org/multierr"
 
-	"github.com/GoogleCloudPlatform/run-gmp-sidecar/collector/exporter/googlemanagedprometheusexporter"
-	"github.com/GoogleCloudPlatform/run-gmp-sidecar/collector/receiver/prometheusreceiver"
+	"github.com/GoogleCloudPlatform/run-gmp-sidecar/components/exporter/googlemanagedprometheusexporter"
+	"github.com/GoogleCloudPlatform/run-gmp-sidecar/components/receiver/prometheusreceiver"
 )
 
 func components() (otelcol.Factories, error) {

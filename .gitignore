@@ -1,2 +1,4 @@
 integration_test/results/
 bin/
+.idea
+.distrogen
