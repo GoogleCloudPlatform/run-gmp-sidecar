@@ -1,0 +1,15 @@
+[Unit]
+Description=The Cloud Run GMP Sidecar build of the OTel Collector
+After=network.target
+
+[Service]
+EnvironmentFile=/etc/rungmpcol/rungmpcol.conf
+ExecStart=/usr/bin/rungmpcol $OTELCOL_OPTIONS
+KillMode=mixed
+Restart=on-failure
+Type=simple
+User=rungmpcol
+Group=rungmpcol
+
+[Install]
+WantedBy=multi-user.target
