@@ -3,7 +3,7 @@ include ./make/maintenance.mk
 
 MAKEFLAGS += --no-print-directory
 
-SPEC_FILE = run-gmp-spec.yaml
+SPEC_FILE = spec.yaml
 
 OTEL_VERSION = 0.113.0
 OTEL_CONTRIB_VERSION = 0.113.0
