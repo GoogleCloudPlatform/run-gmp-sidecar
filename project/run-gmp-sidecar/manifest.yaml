@@ -4,7 +4,7 @@ dist:
   module: github.com/GoogleCloudPlatform/run-gmp-sidecar/run-gmp
   name: rungmpcol
   description: The Cloud Run GMP Sidecar build of the OTel Collector
-  version: 1.4.1
+  version: 1.4.2
   output_path: ./_build
 
 receivers:

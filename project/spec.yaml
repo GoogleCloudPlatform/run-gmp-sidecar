@@ -15,7 +15,7 @@
 name: run-gmp-sidecar
 module: github.com/GoogleCloudPlatform/run-gmp-sidecar/run-gmp
 display_name: Cloud Run GMP Sidecar
-version: 1.4.1
+version: 1.4.2
 description: "The Cloud Run GMP Sidecar build of the OTel Collector"
 blurb: >-
   I will write a blurb at some point.
