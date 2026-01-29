@@ -1,0 +1,51 @@
+name: run-gmp-sidecar
+module: github.com/GoogleCloudPlatform/run-gmp-sidecar/run-gmp
+display_name: Cloud Run GMP Sidecar
+description: The Cloud Run GMP Sidecar build of the OTel Collector
+blurb: I will write a blurb at some point.
+build_container: debian
+version: 1.4.2
+opentelemetry_version: 0.113.0
+opentelemetry_contrib_version: 0.113.0
+opentelemetry_stable_version: 1.19.0
+go_version: 1.24.7
+binary_name: rungmpcol
+build_tags: ""
+boringcrypto: false
+docker_repo: ""
+components:
+    receivers:
+        - otlp
+        - prometheus
+    processors:
+        - filter
+        - groupbyattrs
+        - metricstransform
+        - resourcedetection
+        - resource
+        - transform
+        - batch
+        - memorylimiter
+    exporters:
+        - debug
+        - nop
+        - otlp
+        - otlphttp
+        - file
+        - googlecloud
+        - googlemanagedprometheus
+    extensions:
+        - zpages
+    providers:
+        - env
+        - file
+        - yaml
+replaces:
+    - from: github.com/mattn/go-ieproxy v0.0.9
+      to: github.com/mattn/go-ieproxy v0.0.1
+      reason: Currently causes build issues on windows. Downgrading to previous version.
+    - from: github.com/prometheus/prometheus
+      to: github.com/googleCloudPlatform/prometheus v0.0.0-20241010204127-522fcab662ec
+      reason: 'Point to our fork of Prometheus at branch: feature/shutdownscrape_v0.54.1'
+component_module_base: ""
+distrogen_version: ""
