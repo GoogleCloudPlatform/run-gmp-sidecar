@@ -5,8 +5,8 @@ MAKEFLAGS += --no-print-directory
 
 SPEC_FILE = spec.yaml
 
-OTEL_VERSION = 0.113.0
-OTEL_CONTRIB_VERSION = 0.113.0
+OTEL_VERSION = v$(shell $(DISTROGEN_QUERY) opentelemetry_version)
+OTEL_VERSION = v$(shell $(DISTROGEN_QUERY) opentelemetry_contrib_version)
 
 # if GOOS is not supplied, set default value based on user's system, will be overridden for OS specific packaging commands
 GOOS ?= $(shell go env GOOS)
@@ -22,8 +22,8 @@ BUILD_X2 := -X $(BUILD_INFO_IMPORT_PATH).Version=$(PKG_VERSION)
 BUILD_X3 := -X $(ENTRYPOINT_BUILD_INFO_IMPORT_PATH).Version=$(PKG_VERSION)
 LD_FLAGS := -ldflags "${BUILD_X1} ${BUILD_X2} ${BUILD_X3}"
 
-# Needs to be an absolute path.
-TOOLS_DIR := $(PWD)/collector/internal/tools
+TOOLS_DIR := collector/internal/tools
+DISTRORGEN_TOOLS_DIR := $(PWD)/.tools
 
 .EXPORT_ALL_VARIABLES:
 
@@ -64,8 +64,8 @@ update-opentelemetry:
 #  Tools
 # --------------------------
 
-DISTROGEN_BIN ?= $(TOOLS_DIR)/distrogen
-MDATAGEN_BIN ?= $(TOOLS_DIR)/mdatagen
+DISTROGEN_BIN ?= $(DISTRORGEN_TOOLS_DIR)/distrogen
+MDATAGEN_BIN ?= $(DISTRORGEN_TOOLS_DIR)/mdatagen
 
 .PHONY: install-tools
 install-tools:
@@ -94,19 +94,22 @@ misspell:
 	@output=`misspell -error $(ALL_DOC)` && echo misspell finished successfully || (echo misspell errors:\\n$$output && exit 1)
 
 $(DISTROGEN_BIN):
-	$(MAKE) tools-dir
-	GOBIN=$(TOOLS_DIR) go install github.com/GoogleCloudPlatform/opentelemetry-operations-collector/cmd/distrogen@$(shell cat .distrogen/VERSION)
+	$(MAKE) distrogen-tools-dir
+	GOBIN=$(DISTRORGEN_TOOLS_DIR) go install github.com/GoogleCloudPlatform/opentelemetry-operations-collector/cmd/distrogen@$(shell cat .distrogen/VERSION)
 
 $(MDATAGEN_BIN):
-	$(MAKE) tools-dir
-	GOBIN=$(TOOLS_DIR) bash ./scripts/download_mdatagen.sh v$(OTEL_VERSION)
+	$(MAKE) distrogen-tools-dir
+	GOBIN=$(DISTRORGEN_TOOLS_DIR) bash ./scripts/download_mdatagen.sh v$(OTEL_VERSION)
+
+DISTROGEN_QUERY = $(DISTROGEN_BIN) query --spec $(SPEC_FILE) --field
+
 
 # This is a PHONY target cause if you make it as a normal recipe
 # it gets very confused because the creation date of the .tools
 # directory is newer than the tools inside it.
-.PHONY: tools-dir
-tools-dir:
-	@mkdir -p $(TOOLS_DIR)
+.PHONY: distrogen-tools-dir
+distrogen-tools-dir:
+	@mkdir -p $(DISTRORGEN_TOOLS_DIR)
 
 .PHONY: distrogen
 distrogen: $(DISTROGEN_BIN)
@@ -150,7 +153,7 @@ build:
 	$(MAKE) build-run-gmp-entrypoint
 
 .PHONY: test-collector
-test:
+test-collector:
 	$(MAKE) build-collector
 	go test -tags=$(GO_BUILD_TAGS) $(GO_TEST_VERBOSE) -p 1 -race ./...
 
