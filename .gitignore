@@ -4,4 +4,4 @@ run-gmp/rungmpcol
 **/.tools
 .idea/
 **/_build
-
+collector/internal/tools/distrogen

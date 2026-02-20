@@ -2,10 +2,10 @@ receivers:
   prometheus:
     gomod: github.com/GoogleCloudPlatform/run-gmp-sidecar
     import: github.com/GoogleCloudPlatform/run-gmp-sidecar/collector/receiver/prometheusreceiver
-    path: "../../"
+    path: "../"
 
 exporters:
   googlemanagedprometheus:
     gomod: github.com/GoogleCloudPlatform/run-gmp-sidecar
     import: github.com/GoogleCloudPlatform/run-gmp-sidecar/collector/exporter/googlemanagedprometheusexporter
-    path: "../../"
+    path: "../"

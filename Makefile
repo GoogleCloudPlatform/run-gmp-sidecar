@@ -1,6 +1,13 @@
 # read PKG_VERSION from VERSION file
 include VERSION
 
+MAKEFLAGS += --no-print-directory
+
+SPEC_FILE = spec.yaml
+
+OTEL_VERSION = 0.113.0
+OTEL_CONTRIB_VERSION = 0.113.0
+
 # if GOOS is not supplied, set default value based on user's system, will be overridden for OS specific packaging commands
 GOOS ?= $(shell go env GOOS)
 
@@ -15,7 +22,8 @@ BUILD_X2 := -X $(BUILD_INFO_IMPORT_PATH).Version=$(PKG_VERSION)
 BUILD_X3 := -X $(ENTRYPOINT_BUILD_INFO_IMPORT_PATH).Version=$(PKG_VERSION)
 LD_FLAGS := -ldflags "${BUILD_X1} ${BUILD_X2} ${BUILD_X3}"
 
-TOOLS_DIR := collector/internal/tools
+# Needs to be an absolute path.
+TOOLS_DIR := $(PWD)/collector/internal/tools
 
 .EXPORT_ALL_VARIABLES:
 
@@ -56,6 +64,9 @@ update-opentelemetry:
 #  Tools
 # --------------------------
 
+DISTROGEN_BIN ?= $(TOOLS_DIR)/distrogen
+MDATAGEN_BIN ?= $(TOOLS_DIR)/mdatagen
+
 .PHONY: install-tools
 install-tools:
 	cd $(TOOLS_DIR) && \
@@ -81,6 +92,24 @@ lint:
 .PHONY: misspell
 misspell:
 	@output=`misspell -error $(ALL_DOC)` && echo misspell finished successfully || (echo misspell errors:\\n$$output && exit 1)
+
+$(DISTROGEN_BIN):
+	$(MAKE) tools-dir
+	GOBIN=$(TOOLS_DIR) go install github.com/GoogleCloudPlatform/opentelemetry-operations-collector/cmd/distrogen@$(shell cat .distrogen/VERSION)
+
+$(MDATAGEN_BIN):
+	$(MAKE) tools-dir
+	GOBIN=$(TOOLS_DIR) bash ./scripts/download_mdatagen.sh v$(OTEL_VERSION)
+
+# This is a PHONY target cause if you make it as a normal recipe
+# it gets very confused because the creation date of the .tools
+# directory is newer than the tools inside it.
+.PHONY: tools-dir
+tools-dir:
+	@mkdir -p $(TOOLS_DIR)
+
+.PHONY: distrogen
+distrogen: $(DISTROGEN_BIN)
 
 # --------------------------
 #  CI
@@ -120,7 +149,7 @@ build:
 	$(MAKE) build-collector
 	$(MAKE) build-run-gmp-entrypoint
 
-.PHONY: test
+.PHONY: test-collector
 test:
 	$(MAKE) build-collector
 	go test -tags=$(GO_BUILD_TAGS) $(GO_TEST_VERBOSE) -p 1 -race ./...
@@ -133,9 +162,29 @@ test_verbose:
 test_update:
 	go test ./confgenerator -update
 
-.PHONY: generate
-generate:
+.PHONY: go-generate
+go-generate:
 	go generate ./...
+
+###################
+# Distro Generation
+###################
+
+GEN_OTEL = $(DISTROGEN_BIN) generate --spec $(SPEC_FILE) \
+								 --registry ./components/registry.yaml \
+								 --templates ./templates
+
+.PHONY: gen
+gen: distrogen
+	@$(GEN_OTEL)
+
+.PHONY: regen
+regen: distrogen
+	@$(GEN_OTEL) --force
+
+regen-v: distrogen
+	@$(GEN_OTEL) --force -v
+
 
 # --------------------
 #  Docker
