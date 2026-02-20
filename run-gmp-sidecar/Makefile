@@ -8,13 +8,7 @@ COLLECTOR_BINARY_NAME = rungmpcol
 COLLECTOR_BUILD_TEMP_DIR = $(PWD)/_build
 COLLECTOR_CGO = 0
 COLLECTOR_BUILDVCS ?= false
-COLLECTOR_BUILD_TAGS ?=
-
-ENTRYPOINT_BINARY_NAME = run-gmp-entrypoint
-ENTRYPOINT_SRC = ./entrypoint.go
-ENTRYPOINT_IMPORT_PATH = github.com/GoogleCloudPlatform/run-gmp-sidecar/confgenerator
-GIT_SHA ?= $(shell git rev-parse --short HEAD)
-ENTRYPOINT_LD_FLAGS := -X $(ENTRYPOINT_IMPORT_PATH).Version=$(VERSION)
+COLLECTOR_BUILD_TAGS ?= 
 
 DOCKER_LOCAL_IMAGE_TAG ?= $(COLLECTOR_BINARY_NAME)
 DOCKER_IMAGE_TAG = $(DOCKER_REPO)/$(COLLECTOR_BINARY_NAME):$(VERSION)
@@ -25,23 +19,23 @@ TOOLS_DIR = $(PWD)/.tools
 
 OCB_BIN ?= $(TOOLS_DIR)/ocb
 
-GO_VERSION = 1.24.7
+GO_VERSION = 1.25.7
 GO_BIN_DIR ?= $(TOOLS_DIR)/go/bin
 GO_BIN ?= $(GO_BIN_DIR)/go
 SET_GO_BIN_PATH ?= PATH="$(GO_BIN_DIR):$$PATH"
 
-USE_GO_PROXY ?=
+USE_GO_PROXY ?= 
 
 GORELEASER_BIN ?= $(TOOLS_DIR)/goreleaser
 
 .PHONY: build
-build: $(COLLECTOR_BINARY_NAME) $(ENTRYPOINT_BINARY_NAME)
+build: $(COLLECTOR_BINARY_NAME)
 
 .PHONY: image
 image: image-build image-push
 
 .PHONY: clean
-clean: clean-tools clean-collector clean-entrypoint
+clean: clean-tools clean-collector
 
 .PHONY: install-tools
 install-tools: go ocb
@@ -131,7 +125,7 @@ $(COLLECTOR_BINARY_NAME): ocb-generate
 .PHONY: collector-module-list
 collector-module-list: ocb-generate
 	cd $(COLLECTOR_BUILD_TEMP_DIR) && \
-		GOWORK=off go list -deps -f 'github.com/GoogleCloudPlatform/run-gmp-sidecar/run-gmp' ./... |\
+		GOWORK=off go list -deps -f '{{ .Module }}' ./... |\
 		grep -v '<nil>' |\
 		sort -u > ../packages.txt
 
@@ -143,32 +137,6 @@ clean-collector: clean-build-dir
 .PHONY: clean-build-dir
 clean-build-dir:
 	rm -rf $(COLLECTOR_BUILD_TEMP_DIR)
-
-###################
-# Entrypoint Build
-###################
-# Targets for building the sidecar entrypoint.
-
-.PHONY: entrypoint-build
-entrypoint-build: clean-entrypoint $(ENTRYPOINT_BINARY_NAME)
-
-$(ENTRYPOINT_BINARY_NAME):
-	@echo "Building $(ENTRYPOINT_BINARY_NAME) from project root..."
-	cd ../&& \
-	GOWORK=off \
-	CGO_ENABLED=$(COLLECTOR_CGO) \
-	GOOS=$(TARGETOS) GOARCH=$(TARGETARCH) \
-	$(if $(USE_GO_PROXY),GOPROXY=$(USE_GO_PROXY),) \
-	$(GO_BIN) build \
-		-buildvcs=$(COLLECTOR_BUILDVCS) \
-		-tags=$(COLLECTOR_BUILD_TAGS) \
-		--ldflags="-s -w $(ENTRYPOINT_LD_FLAGS)" \
-		-o $(CURDIR)/$(ENTRYPOINT_BINARY_NAME) \
-		$(ENTRYPOINT_SRC)
-
-.PHONY: clean-entrypoint
-clean-entrypoint:
-	rm -f $(ENTRYPOINT_BINARY_NAME)
 
 ###################
 # Goreleaser build

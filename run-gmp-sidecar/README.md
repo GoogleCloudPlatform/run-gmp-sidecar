@@ -1,6 +1,6 @@
 # Cloud Run GMP Sidecar
 
-I will write a blurb at some point.
+The run-gmp-sidecar is Google's recommended, serverless-friendly solution for seamlessly integrating Google Managed Service for Prometheus (GMP) into Cloud Run services. Leveraging Cloud Run's multi-container capabilities, it deploys a specialized OpenTelemetry Collector as a secondary "sidecar" container running directly alongside your main application.
 
 # Components
 

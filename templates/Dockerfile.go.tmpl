@@ -7,7 +7,9 @@ RUN go install github.com/client9/misspell/cmd/misspell@v0.3.4 \
     && go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.52.1 \
     && go install github.com/google/addlicense@v1.0.0
 RUN apt update && apt install -y make
-RUN make build
+
+WORKDIR /sidecar/run-gmp-sidecar
+RUN make -f run-gmp-build.mk build-rungmp
 
 FROM alpine:latest AS certs
 RUN apk --update add ca-certificates
@@ -15,7 +17,7 @@ RUN apk --update add ca-certificates
 FROM scratch
 
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=builder /sidecar/bin/rungmpcol /rungmpcol
-COPY --from=builder /sidecar/bin/run-gmp-entrypoint /run-gmp-entrypoint
+COPY --from=builder /sidecar/run-gmp-sidecar/rungmpcol /rungmpcol
+COPY --from=builder /sidecar/run-gmp-sidecar/run-gmp-entrypoint /run-gmp-entrypoint
 
 ENTRYPOINT ["/run-gmp-entrypoint"]

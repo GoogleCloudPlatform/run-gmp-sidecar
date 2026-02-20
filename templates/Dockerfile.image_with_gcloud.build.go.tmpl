@@ -16,14 +16,14 @@ RUN apt-get update && apt-get install -y make curl gettext-base
 ARG PROJECT_ROOT
 COPY ${PROJECT_ROOT} /
 
-WORKDIR /project/run-gmp-sidecar
+WORKDIR /run-gmp-sidecar
 
 ARG BUILDARCH
 ARG BUILDOS
 ARG TARGETOS
 ARG TARGETARCH
 
-RUN make GO_BIN_DIR=/usr/local/go/bin USE_GO_PROXY=https://us-go.pkg.dev/access-aoss/assuredoss-go build
+RUN make GO_BIN_DIR=/usr/local/go/bin USE_GO_PROXY=https://us-go.pkg.dev/access-aoss/assuredoss-go -f run-gmp-build.mk build-rungmp
 
 FROM ${CERT_CONTAINER} AS certs
 RUN rm -f /etc/apt/sources.list.d/* /etc/apt/sources.list
@@ -37,9 +37,9 @@ USER ${USER_UID}
 
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-COPY --from=build --chmod=755 /project/run-gmp-sidecar/rungmpcol /rungmpcol
-COPY --from=build --chmod=755 /project/run-gmp-sidecar/run-gmp-entrypoint /run-gmp-entrypoint
-COPY --from=build --chmod=644 /project/run-gmp-sidecar/config.yaml /etc/rungmpcol/config.yaml
+COPY --from=build --chmod=755 /run-gmp-sidecar/rungmpcol /rungmpcol
+COPY --from=build --chmod=755 /run-gmp-sidecar/run-gmp-entrypoint /run-gmp-entrypoint
+COPY --from=build --chmod=644 /run-gmp-sidecar/config.yaml /etc/rungmpcol/config.yaml
 
 ENTRYPOINT ["/run-gmp-entrypoint"]
 CMD ["--config=/etc/rungmpcol/config.yaml"]
