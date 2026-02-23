@@ -199,7 +199,7 @@ BUILD_IMAGE_REPO ?= gcr.io/stackdriver-test-143416/opentelemetry-operations-coll
 
 .PHONY: docker-build-image
 docker-build-image:
-	docker build -t $(BUILD_IMAGE_NAME) -f ./run-gmp-sidecar/Dockerfile .
+	docker build -t $(BUILD_IMAGE_NAME) -f ./run-gmp-sidecar/Dockerfile.build .
 
 .PHONY: docker-push-image
 docker-push-image:
