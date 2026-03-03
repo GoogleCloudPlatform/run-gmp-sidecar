@@ -1,6 +1,13 @@
 # read PKG_VERSION from VERSION file
 include VERSION
 
+MAKEFLAGS += --no-print-directory
+
+SPEC_FILE = spec.yaml
+
+OTEL_VERSION = v$(shell $(DISTROGEN_QUERY) opentelemetry_version)
+OTEL_VERSION = v$(shell $(DISTROGEN_QUERY) opentelemetry_contrib_version)
+
 # if GOOS is not supplied, set default value based on user's system, will be overridden for OS specific packaging commands
 GOOS ?= $(shell go env GOOS)
 
@@ -16,6 +23,7 @@ BUILD_X3 := -X $(ENTRYPOINT_BUILD_INFO_IMPORT_PATH).Version=$(PKG_VERSION)
 LD_FLAGS := -ldflags "${BUILD_X1} ${BUILD_X2} ${BUILD_X3}"
 
 TOOLS_DIR := collector/internal/tools
+DISTRORGEN_TOOLS_DIR := $(PWD)/.tools
 
 .EXPORT_ALL_VARIABLES:
 
@@ -56,6 +64,9 @@ update-opentelemetry:
 #  Tools
 # --------------------------
 
+DISTROGEN_BIN ?= $(DISTRORGEN_TOOLS_DIR)/distrogen
+MDATAGEN_BIN ?= $(DISTRORGEN_TOOLS_DIR)/mdatagen
+
 .PHONY: install-tools
 install-tools:
 	cd $(TOOLS_DIR) && \
@@ -81,6 +92,27 @@ lint:
 .PHONY: misspell
 misspell:
 	@output=`misspell -error $(ALL_DOC)` && echo misspell finished successfully || (echo misspell errors:\\n$$output && exit 1)
+
+$(DISTROGEN_BIN):
+	$(MAKE) distrogen-tools-dir
+	GOBIN=$(DISTRORGEN_TOOLS_DIR) go install github.com/GoogleCloudPlatform/opentelemetry-operations-collector/cmd/distrogen@$(shell cat .distrogen/VERSION)
+
+$(MDATAGEN_BIN):
+	$(MAKE) distrogen-tools-dir
+	GOBIN=$(DISTRORGEN_TOOLS_DIR) bash ./scripts/download_mdatagen.sh v$(OTEL_VERSION)
+
+DISTROGEN_QUERY = $(DISTROGEN_BIN) query --spec $(SPEC_FILE) --field
+
+
+# This is a PHONY target cause if you make it as a normal recipe
+# it gets very confused because the creation date of the .tools
+# directory is newer than the tools inside it.
+.PHONY: distrogen-tools-dir
+distrogen-tools-dir:
+	@mkdir -p $(DISTRORGEN_TOOLS_DIR)
+
+.PHONY: distrogen
+distrogen: $(DISTROGEN_BIN)
 
 # --------------------------
 #  CI
@@ -120,8 +152,8 @@ build:
 	$(MAKE) build-collector
 	$(MAKE) build-run-gmp-entrypoint
 
-.PHONY: test
-test:
+.PHONY: test-collector
+test-collector:
 	$(MAKE) build-collector
 	go test -tags=$(GO_BUILD_TAGS) $(GO_TEST_VERBOSE) -p 1 -race ./...
 
@@ -133,9 +165,29 @@ test_verbose:
 test_update:
 	go test ./confgenerator -update
 
-.PHONY: generate
-generate:
+.PHONY: go-generate
+go-generate:
 	go generate ./...
+
+###################
+# Distro Generation
+###################
+
+GEN_OTEL = $(DISTROGEN_BIN) generate --spec $(SPEC_FILE) \
+								 --registry ./components/registry.yaml \
+								 --templates ./templates
+
+.PHONY: gen
+gen: distrogen
+	@$(GEN_OTEL)
+
+.PHONY: regen
+regen: distrogen
+	@$(GEN_OTEL) --force
+
+regen-v: distrogen
+	@$(GEN_OTEL) --force -v
+
 
 # --------------------
 #  Docker
@@ -147,7 +199,7 @@ BUILD_IMAGE_REPO ?= gcr.io/stackdriver-test-143416/opentelemetry-operations-coll
 
 .PHONY: docker-build-image
 docker-build-image:
-	docker build -t $(BUILD_IMAGE_NAME) .
+	docker build -t $(BUILD_IMAGE_NAME) -f ./run-gmp-sidecar/Dockerfile.build .
 
 .PHONY: docker-push-image
 docker-push-image:

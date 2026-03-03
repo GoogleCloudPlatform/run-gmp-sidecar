@@ -27,7 +27,7 @@ spec:
         run.googleapis.com/container-dependencies: '{"collector":["app"]}'
     spec:
       containers:
-        - image: "%SAMPLE_APP_IMAGE%"
+        - image: "us-east1-docker.pkg.dev/ops-agent-first-dive/run-gmp/sample-app"
           name: app
           startupProbe:
             httpGet:
