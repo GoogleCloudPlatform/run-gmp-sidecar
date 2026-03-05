@@ -11,7 +11,6 @@ OTEL_VERSION = v$(shell $(DISTROGEN_QUERY) opentelemetry_contrib_version)
 # if GOOS is not supplied, set default value based on user's system, will be overridden for OS specific packaging commands
 GOOS ?= $(shell go env GOOS)
 
-ALL_SRC := $(shell find . -name '*.go' -type f | sort)
 ALL_DOC := $(shell find . \( -name "*.md" -o -name "*.yaml" \) -type f | sort)
 GIT_SHA := $(shell git rev-parse --short HEAD)
 
