@@ -32,9 +32,6 @@ RUN apt-get update && apt-get install -y ca-certificates
 
 FROM scratch
 
-ARG USER_UID=10001
-USER ${USER_UID}
-
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 COPY --from=build --chmod=755 /run-gmp-sidecar/rungmpcol /rungmpcol
