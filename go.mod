@@ -1,6 +1,6 @@
 module github.com/GoogleCloudPlatform/run-gmp-sidecar
 
-go 1.25.7
+go 1.25.0
 
 toolchain go1.25.7
 
