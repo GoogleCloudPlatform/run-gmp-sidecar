@@ -4,7 +4,7 @@ display_name: Cloud Run GMP Sidecar
 description: The Cloud Run GMP Sidecar build of the OTel Collector
 blurb: The run-gmp-sidecar is Google's recommended, serverless-friendly solution for seamlessly integrating Google Managed Service for Prometheus (GMP) into Cloud Run services. Leveraging Cloud Run's multi-container capabilities, it deploys a specialized OpenTelemetry Collector as a secondary "sidecar" container running directly alongside your main application.
 build_container: debian
-version: 1.7.0
+version: 1.8.0
 opentelemetry_version: 0.113.0
 opentelemetry_contrib_version: 0.113.0
 opentelemetry_stable_version: 1.19.0
