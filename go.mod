@@ -34,7 +34,7 @@ require (
 	go.opentelemetry.io/collector/extension/zpagesextension v0.113.0
 	go.opentelemetry.io/collector/featuregate v1.19.0
 	go.opentelemetry.io/collector/otelcol v0.113.0
-	go.opentelemetry.io/collector/otelcol/otelcoltest v0.112.0
+	go.opentelemetry.io/collector/otelcol/otelcoltest v0.113.0
 	go.opentelemetry.io/collector/pdata v1.19.0
 	go.opentelemetry.io/collector/processor v0.113.0
 	go.opentelemetry.io/collector/processor/batchprocessor v0.113.0
@@ -53,7 +53,7 @@ require (
 	go.opentelemetry.io/collector/component/componentstatus v0.113.0
 	go.opentelemetry.io/collector/confmap/provider/envprovider v1.19.0
 	go.opentelemetry.io/collector/confmap/provider/httpprovider v1.19.0
-	go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.17.0
+	go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.19.0
 	go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.19.0
 	go.opentelemetry.io/collector/exporter/debugexporter v0.113.0
 	go.opentelemetry.io/collector/exporter/exportertest v0.113.0

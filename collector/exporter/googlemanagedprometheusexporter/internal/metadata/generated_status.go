@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	Type = component.MustNewType("googlemanagedprometheus")
+	Type      = component.MustNewType("googlemanagedprometheus")
+	ScopeName = "otelcol/googlemanagedprometheus"
 )
 
 const (
