@@ -1,6 +1,6 @@
 integration_test/results/
 bin/
-run-gmp/rungmpcol
+run-gmp-sidecar/rungmpcol
 **/.tools
 .idea/
 **/_build
