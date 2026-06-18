@@ -25,20 +25,32 @@ import (
 	"github.com/prometheus/prometheus/model/relabel"
 )
 
-// CloudRunEnvironment captures some environment metadata that is captures using environment variables.
-// See https://cloud.google.com/run/docs/container-contract#services-env-vars for more information.
+// CloudRunEnvironment captures some environment metadata using environment variables.
+// It supports both Cloud Run Services and Cloud Run Worker Pools.
+// See https://cloud.google.com/run/docs/container-contract for more information.
 // Note that PORT is not made available to sidecar containers, and so is omitted from this struct.
 type CloudRunEnvironment struct {
 	Service       string
 	Revision      string
 	Configuration string
+	WorkerPool    string
 }
 
 func fetchMetadata() *CloudRunEnvironment {
+	if service := os.Getenv("K_SERVICE"); service != "" {
+		// Cloud Run Service
+		return &CloudRunEnvironment{
+			Service:       service,
+			Revision:      os.Getenv("K_REVISION"),
+			Configuration: os.Getenv("K_CONFIGURATION"),
+		}
+	}
+
+	// Cloud Run Worker Pool (or default fallback)
 	return &CloudRunEnvironment{
-		Service:       os.Getenv("K_SERVICE"),
-		Revision:      os.Getenv("K_REVISION"),
-		Configuration: os.Getenv("K_CONFIGURATION"),
+		WorkerPool:    os.Getenv("CLOUD_RUN_WORKER_POOL"),
+		Revision:      os.Getenv("CLOUD_RUN_REVISION"),
+		Configuration: "", // Configuration is not set for Worker Pools.
 	}
 }
 

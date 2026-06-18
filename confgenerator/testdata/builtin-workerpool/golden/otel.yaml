@@ -98,7 +98,7 @@ processors:
     metric_statements:
     - context: datapoint
       statements:
-      - set(datapoint.attributes["namespace"], "test_service")
+      - set(datapoint.attributes["namespace"], "")
       - set(datapoint.attributes["cluster"], "__run__")
       - replace_pattern(resource.attributes["service.instance.id"], "^(\\d+)$$", Concat([resource.attributes["faas.instance"],
         "$$1"], ":"))
@@ -110,8 +110,8 @@ receivers:
       - job_name: run-gmp-sidecar-0
         honor_timestamps: false
         track_timestamps_staleness: false
-        scrape_interval: 1m
-        scrape_timeout: 1m
+        scrape_interval: 30s
+        scrape_timeout: 30s
         scrape_protocols:
         - OpenMetricsText1.0.0
         - OpenMetricsText0.0.1
@@ -130,20 +130,16 @@ receivers:
         enable_http2: false
         relabel_configs:
         - regex: null
-          target_label: service_name
-          replacement: test_service
+          target_label: worker_pool
+          replacement: test_workerpool
           action: replace
         - regex: null
           target_label: revision_name
-          replacement: test_revision
-          action: replace
-        - regex: null
-          target_label: configuration_name
-          replacement: test_configuration
+          replacement: test_workerpool_revision
           action: replace
         - regex: null
           target_label: job
-          replacement: run-run-run
+          replacement: run-gmp-sidecar
           action: replace
         - regex: null
           target_label: cluster
@@ -151,7 +147,7 @@ receivers:
           action: replace
         - regex: null
           target_label: namespace
-          replacement: test_service
+          replacement: test_workerpool
           action: replace
         - regex: null
           target_label: instance

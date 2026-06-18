@@ -27,7 +27,9 @@ import (
 	"testing"
 	"time"
 
-	gokitlog "github.com/go-kit/log"
+	"io"
+	"log/slog"
+
 	promcfg "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/value"
@@ -42,6 +44,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/GoogleCloudPlatform/run-gmp-sidecar/collector/receiver/prometheusreceiver/internal"
+	"github.com/GoogleCloudPlatform/run-gmp-sidecar/collector/receiver/prometheusreceiver/internal/metadata"
 )
 
 type mockPrometheusResponse struct {
@@ -153,12 +156,11 @@ func setupMockPrometheus(tds ...*testData) (*mockPrometheus, *promcfg.Config, er
 	if err != nil {
 		return mp, nil, err
 	}
-	// update attributes value (will use for validation)
-	l := []labels.Label{{Name: "__scheme__", Value: "http"}}
+	l := labels.FromMap(map[string]string{"__scheme__": "http"})
 	for _, t := range tds {
 		t.attributes = internal.CreateResource(t.name, u.Host, l).Attributes()
 	}
-	pCfg, err := promcfg.Load(string(cfg), false, gokitlog.NewNopLogger())
+	pCfg, err := promcfg.Load(string(cfg), slog.New(slog.NewTextHandler(io.Discard, nil)))
 	return mp, pCfg, err
 }
 
@@ -591,11 +593,14 @@ func testComponent(t *testing.T, targets []*testData, useStartTimeMetric bool, s
 	for _, cfgMut := range cfgMuts {
 		cfgMut(cfg)
 	}
+	for _, scfg := range cfg.ScrapeConfigs {
+		require.NoError(t, scfg.Validate(cfg.GlobalConfig))
+	}
 	require.Nilf(t, err, "Failed to create Prometheus config: %v", err)
 	defer mp.Close()
 
 	cms := new(consumertest.MetricsSink)
-	receiver := newPrometheusReceiver(receivertest.NewNopSettings(), &Config{
+	receiver := newPrometheusReceiver(receivertest.NewNopSettings(metadata.Type), &Config{
 		PrometheusConfig: cfg,
 		AdjusterOpts: MetricAdjusterOpts{
 			UseStartTimeMetric:   useStartTimeMetric,

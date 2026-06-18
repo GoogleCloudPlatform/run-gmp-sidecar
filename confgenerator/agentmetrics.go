@@ -35,6 +35,13 @@ func (r AgentSelfMetrics) OTelReceiverPipeline() otel.ReceiverPipeline {
 					"scrape_configs": []map[string]interface{}{{
 						"job_name":        "run-gmp-sidecar-self-metrics",
 						"scrape_interval": "1m",
+						// Explicitly set fallback_scrape_protocol to PrometheusText0.0.4.
+						// The OTel Collector's config validator recursively walks Go structs at startup.
+						// Since ScrapeFallbackProtocol is left as Go's zero-value ("") and its type
+						// ScrapeProtocol implements a Validate() error method (with no arguments), OTel
+						// automatically calls it. Since "" is not a valid scrape protocol, this triggers
+						// a validation crash. Setting a valid default prevents this crash.
+						"fallback_scrape_protocol": "PrometheusText0.0.4",
 						"static_configs": []map[string]interface{}{{
 							"targets": []string{fmt.Sprintf("0.0.0.0:%d", r.Port)},
 						}},

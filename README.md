@@ -9,6 +9,17 @@ alongside your workload container.
 [Learn more about sidecars in Cloud Run (currently a preview feature)
 here.](https://cloud.google.com/run/docs/deploying#multicontainer)
 
+## Table of Contents
+* [Getting started](#getting-started)
+* [Prerequisites](#prerequisites)
+* [Run sample (automated)](#run-sample-automated)
+* [Run sample (manual steps)](#run-sample-manual-steps)
+* [View telemetry in Google Cloud](#view-telemetry-in-google-cloud)
+* [Run worker pool (manual steps)](#run-worker-pool-manual-steps)
+* [Clean up](#clean-up)
+
+For development guides, architecture details, and instructions on how to test and contribute, see the [Developer Skill Guide](.agents/skills/run-gmp-sidecar/SKILL.md).
+
 ## Getting started
 
 The following steps walk you through setting up a sample app on Cloud Run that
@@ -235,6 +246,33 @@ added homework.
 
 ##### Self observability logs
 Logs from the sidecar are written against the `Cloud Run Revision` [monitored resource](https://cloud.google.com/monitoring/api/resources#tag_cloud_run_revision) in Cloud Logging.
+
+### Run worker pool (manual steps)
+
+The `run-workerpool.yaml` file defines a multicontainer Cloud Run Worker Pool with the sample app and Collector images built above. Worker Pools run continuously and do not have HTTP ingress, meaning CPU is always allocated by default.
+
+#### Create RunMonitoring config and store as a secret
+
+Worker Pools can read their custom configuration from Secret Manager just like services do. Follow the steps in the service custom config section above to create the `run-gmp-config` secret.
+
+#### Deploy the Worker Pool
+
+Replace the `%SAMPLE_APP_IMAGE%`, `%OTELCOL_IMAGE%`, `%PROJECT%` and `%SECRET%` placeholders in `run-workerpool.yaml` with your project and image details:
+
+```
+sed -i s@%OTELCOL_IMAGE%@${REGION}-docker.pkg.dev/${GCP_PROJECT}/run-gmp/collector@g run-workerpool.yaml
+sed -i s@%SAMPLE_APP_IMAGE%@${REGION}-docker.pkg.dev/${GCP_PROJECT}/run-gmp/sample-app@g run-workerpool.yaml
+sed -i s@%PROJECT%@${GCP_PROJECT}@g run-workerpool.yaml
+sed -i s@%SECRET%@${RUN_GMP_CONFIG}@g run-workerpool.yaml
+```
+
+Create the Worker Pool with the following command:
+
+```
+gcloud beta run worker-pools replace run-workerpool.yaml --region=${REGION}
+```
+
+Because Worker Pools run background workloads continuously, there is no external URL to query. Metrics will be emitted and sent to Cloud Monitoring automatically in the background.
 
 ### Clean up
 

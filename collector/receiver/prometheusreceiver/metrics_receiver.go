@@ -26,7 +26,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-kit/log"
+	"log/slog"
 	"github.com/mitchellh/hashstructure/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
@@ -85,12 +85,12 @@ func (r *pReceiver) Start(_ context.Context, host component.Host) error {
 	discoveryCtx, cancel := context.WithCancel(context.Background())
 	r.cancelFunc = cancel
 
-	logger := internal.NewZapToGokitLogAdapter(r.settings.Logger)
+	slogLogger := internal.NewZapToSlogAdapter(r.settings.Logger)
 
 	// add scrape configs defined by the collector configs
 	baseCfg := r.cfg.PrometheusConfig
 
-	err := r.initPrometheusComponents(discoveryCtx, logger, host)
+	err := r.initPrometheusComponents(discoveryCtx, slogLogger, host)
 	if err != nil {
 		r.settings.Logger.Error("Failed to initPrometheusComponents Prometheus components", zap.Error(err))
 		return err
@@ -222,11 +222,43 @@ func (r *pReceiver) getScrapeConfigsResponse(baseURL string) (map[string]*config
 		return nil, err
 	}
 
-	jobToScrapeConfig := map[string]*config.ScrapeConfig{}
+	var rawMap map[string]any
 	envReplacedBody := r.instantiateShard(body)
-	err = yaml.Unmarshal(envReplacedBody, &jobToScrapeConfig)
+	err = yaml.Unmarshal(envReplacedBody, &rawMap)
 	if err != nil {
 		return nil, err
+	}
+
+	var rawList []any
+	for _, v := range rawMap {
+		rawList = append(rawList, v)
+	}
+
+	for _, sc := range rawList {
+		if scMap, ok := sc.(map[string]any); ok {
+			if scMap["fallback_scrape_protocol"] == nil || scMap["fallback_scrape_protocol"] == "" {
+				scMap["fallback_scrape_protocol"] = "PrometheusText0.0.4"
+			}
+		}
+	}
+
+	virtualConfig := map[string]any{
+		"scrape_configs": rawList,
+	}
+
+	virtualYaml, err := yaml.Marshal(virtualConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	loadedCfg, err := config.Load(string(virtualYaml), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	jobToScrapeConfig := map[string]*config.ScrapeConfig{}
+	for _, sc := range loadedCfg.ScrapeConfigs {
+		jobToScrapeConfig[sc.JobName] = sc
 	}
 	err = resp.Body.Close()
 	if err != nil {
@@ -251,12 +283,8 @@ func (r *pReceiver) applyCfg(cfg *config.Config) error {
 	return nil
 }
 
-func (r *pReceiver) initPrometheusComponents(ctx context.Context, logger log.Logger, host component.Host) error {
-	// Some SD mechanisms use the "refresh" package, which has its own metrics.
-	refreshSdMetrics := discovery.NewRefreshMetrics(r.registerer)
-
-	// Register the metrics specific for each SD mechanism, and the ones for the refresh package.
-	sdMetrics, err := discovery.RegisterSDMetrics(r.registerer, refreshSdMetrics)
+func (r *pReceiver) initPrometheusComponents(ctx context.Context, logger *slog.Logger, host component.Host) error {
+	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(r.registerer)
 	if err != nil {
 		return fmt.Errorf("failed to register service discovery metrics: %w", err)
 	}
@@ -302,7 +330,7 @@ func (r *pReceiver) initPrometheusComponents(ctx context.Context, logger log.Log
 
 	// For the sidecar, use a 10s offset from the start before scraping the targets.
 	tenSecondOffSet := 10 * time.Second
-	r.scrapeManager, err = scrape.NewManager(&scrape.Options{PassMetadataInContext: true, InitialScrapeOffset: &tenSecondOffSet, DiscoveryReloadOnStartup: true}, logger, store, r.registerer)
+	r.scrapeManager, err = scrape.NewManager(&scrape.Options{PassMetadataInContext: true, InitialScrapeOffset: &tenSecondOffSet, DiscoveryReloadOnStartup: true}, logger, nil, store, nil, r.registerer)
 	if err != nil {
 		return err
 	}

@@ -292,15 +292,26 @@ func (cfg *Config) Unmarshal(componentParser *confmap.Conf) error {
 	if err != nil || len(promCfg.ToStringMap()) == 0 {
 		return err
 	}
-	out, err := yaml.Marshal(promCfg.ToStringMap())
+	promMap := promCfg.ToStringMap()
+	if scrapeConfigs, ok := promMap["scrape_configs"].([]any); ok {
+		for _, sc := range scrapeConfigs {
+			if scMap, ok := sc.(map[string]any); ok {
+				if scMap["fallback_scrape_protocol"] == nil || scMap["fallback_scrape_protocol"] == "" {
+					scMap["fallback_scrape_protocol"] = "PrometheusText0.0.4"
+				}
+			}
+		}
+	}
+	out, err := yaml.Marshal(promMap)
 	if err != nil {
 		return fmt.Errorf("prometheus receiver failed to marshal config to yaml: %w", err)
 	}
 
-	err = yaml.UnmarshalStrict(out, &cfg.PrometheusConfig)
+	pCfg, err := promconfig.Load(string(out), nil)
 	if err != nil {
-		return fmt.Errorf("prometheus receiver failed to unmarshal yaml to prometheus config: %w", err)
+		return fmt.Errorf("prometheus receiver failed to load prometheus config: %w", err)
 	}
+	cfg.PrometheusConfig = pCfg
 
 	// Unmarshal targetAllocator configs
 	targetAllocatorCfg, err := componentParser.Sub(targetAllocatorConfigKey)

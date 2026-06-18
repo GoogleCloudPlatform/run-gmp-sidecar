@@ -30,6 +30,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/snappy"
 	"github.com/prometheus/prometheus/model/value"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/prompb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -41,8 +42,8 @@ import (
 	"go.opentelemetry.io/collector/processor"
 	"go.opentelemetry.io/collector/processor/batchprocessor"
 	"go.opentelemetry.io/collector/receiver"
+	"go.opentelemetry.io/collector/service/telemetry/otelconftelemetry"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
 	"github.com/GoogleCloudPlatform/run-gmp-sidecar/collector/receiver/prometheusreceiver"
 
@@ -57,6 +58,17 @@ func TestStalenessMarkersEndToEnd(t *testing.T) {
 	if testing.Short() {
 		t.Skip("This test can take a long time")
 	}
+
+	// Reset the global prometheus default registerer to avoid duplicate registration errors.
+	oldRegisterer := prometheus.DefaultRegisterer
+	oldGatherer := prometheus.DefaultGatherer
+	reg := prometheus.NewRegistry()
+	prometheus.DefaultRegisterer = reg
+	prometheus.DefaultGatherer = reg
+	defer func() {
+		prometheus.DefaultRegisterer = oldRegisterer
+		prometheus.DefaultGatherer = oldGatherer
+	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -145,17 +157,18 @@ service:
 	_, err = confFile.Write([]byte(cfg))
 	require.Nil(t, err)
 	// 4. Run the OpenTelemetry Collector.
-	receivers, err := receiver.MakeFactoryMap(prometheusreceiver.NewFactory())
+	receivers, err := otelcol.MakeFactoryMap[receiver.Factory](prometheusreceiver.NewFactory())
 	require.Nil(t, err)
-	exporters, err := exporter.MakeFactoryMap(prometheusremotewriteexporter.NewFactory())
+	exporters, err := otelcol.MakeFactoryMap[exporter.Factory](prometheusremotewriteexporter.NewFactory())
 	require.Nil(t, err)
-	processors, err := processor.MakeFactoryMap(batchprocessor.NewFactory())
+	processors, err := otelcol.MakeFactoryMap[processor.Factory](batchprocessor.NewFactory())
 	require.Nil(t, err)
 
 	factories := otelcol.Factories{
 		Receivers:  receivers,
 		Exporters:  exporters,
 		Processors: processors,
+		Telemetry:  otelconftelemetry.NewFactory(),
 	}
 
 	appSettings := otelcol.CollectorSettings{
@@ -171,12 +184,7 @@ service:
 			Description: "OpenTelemetry Collector",
 			Version:     "tests",
 		},
-		LoggingOptions: []zap.Option{
-			// Turn off the verbose logging from the collector.
-			zap.WrapCore(func(zapcore.Core) zapcore.Core {
-				return zapcore.NewNopCore()
-			}),
-		},
+		LoggingOptions: []zap.Option{},
 	}
 
 	app, err := otelcol.NewCollector(appSettings)

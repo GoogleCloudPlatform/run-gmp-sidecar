@@ -11,10 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/exporter/exporterhelper"
 	"go.opentelemetry.io/collector/otelcol/otelcoltest"
 
-	"github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/collector/googlemanagedprometheus"
 	"github.com/GoogleCloudPlatform/run-gmp-sidecar/collector/exporter/googlemanagedprometheusexporter/internal/metadata"
 )
 
@@ -35,29 +33,16 @@ func TestLoadConfig(t *testing.T) {
 	assert.Equal(t, r0, factory.CreateDefaultConfig().(*Config))
 
 	r1 := cfg.Exporters[component.NewIDWithName(metadata.Type, "customname")].(*Config)
-	assert.Equal(t, r1,
-		&Config{
-			TimeoutSettings: exporterhelper.TimeoutConfig{
-				Timeout: 20 * time.Second,
-			},
-			GMPConfig: GMPConfig{
-				ProjectID: "my-project",
-				UserAgent: "opentelemetry-collector-contrib {{version}}",
-				MetricConfig: MetricConfig{
-					Config: googlemanagedprometheus.Config{
-						AddMetricSuffixes: false,
-						ExtraMetricsConfig: googlemanagedprometheus.ExtraMetricsConfig{
-							EnableTargetInfo: false,
-							EnableScopeInfo:  false,
-						},
-					},
-					Prefix: "my-metric-domain.com",
-				},
-			},
-			QueueSettings: exporterhelper.QueueConfig{
-				Enabled:      true,
-				NumConsumers: 2,
-				QueueSize:    10,
-			},
-		})
+	expectedCfg := factory.CreateDefaultConfig().(*Config)
+	expectedCfg.TimeoutSettings.Timeout = 20 * time.Second
+	expectedCfg.ProjectID = "my-project"
+	expectedCfg.UserAgent = "opentelemetry-collector-contrib {{version}}"
+	expectedCfg.MetricConfig.Prefix = "my-metric-domain.com"
+	expectedCfg.MetricConfig.Config.AddMetricSuffixes = false
+	expectedCfg.MetricConfig.Config.ExtraMetricsConfig.EnableTargetInfo = false
+	expectedCfg.MetricConfig.Config.ExtraMetricsConfig.EnableScopeInfo = false
+	expectedCfg.QueueSettings.NumConsumers = 2
+	expectedCfg.QueueSettings.QueueSize = 10
+
+	assert.Equal(t, expectedCfg, r1)
 }

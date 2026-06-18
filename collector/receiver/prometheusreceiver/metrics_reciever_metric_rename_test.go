@@ -270,8 +270,10 @@ func TestLabelRenaming(t *testing.T) {
 				},
 				{
 					// this config should drop the matched regex label
-					Regex:  relabel.MustNewRegexp("(url.*)"),
-					Action: relabel.LabelDrop,
+					Regex:       relabel.MustNewRegexp("(url.*)"),
+					Action:      relabel.LabelDrop,
+					Separator:   relabel.DefaultRelabelConfig.Separator,
+					Replacement: relabel.DefaultRelabelConfig.Replacement,
 				},
 			}
 		}
@@ -374,7 +376,9 @@ func TestLabelRenamingKeepAction(t *testing.T) {
 					// this config should keep only metric that matches the regex metric name, and drop the rest
 					Regex: relabel.MustNewRegexp("__name__|__scheme__|__address__|" +
 						"__metrics_path__|__scrape_interval__|instance|job|(m.*)"),
-					Action: relabel.LabelKeep,
+					Action:      relabel.LabelKeep,
+					Separator:   relabel.DefaultRelabelConfig.Separator,
+					Replacement: relabel.DefaultRelabelConfig.Replacement,
 				},
 			}
 		}
