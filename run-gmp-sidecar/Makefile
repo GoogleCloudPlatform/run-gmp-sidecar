@@ -2,7 +2,7 @@
 
 # Variables filled in from distro specification
 VERSION ?= 1.9.0
-OTEL_VERSION ?= 0.154.0
+OTEL_VERSION ?= 0.155.0
 OTEL_VERSION_TAG = v$(OTEL_VERSION)
 COLLECTOR_BINARY_NAME = rungmpcol
 COLLECTOR_BUILD_TEMP_DIR = $(PWD)/_build
