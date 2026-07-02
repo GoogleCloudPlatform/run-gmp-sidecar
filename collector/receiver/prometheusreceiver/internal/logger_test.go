@@ -16,6 +16,7 @@ package internal
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"testing"
 
@@ -299,3 +300,42 @@ func TestE2E(t *testing.T) {
 		})
 	}
 }
+
+func TestSlogZapHandler(t *testing.T) {
+	logger, observed := observer.New(zap.DebugLevel)
+	slogLogger := NewZapToSlogAdapter(zap.New(logger))
+
+	slogLogger.Info("hello", slog.String("key", "val"))
+	entries := observed.TakeAll()
+	require.Len(t, entries, 1)
+	assert.Equal(t, zapcore.InfoLevel, entries[0].Level)
+	assert.Equal(t, "hello", entries[0].Message)
+	assert.Equal(t, []zapcore.Field{zap.String("key", "val")}, entries[0].Context)
+
+	// Test WithAttrs
+	subLogger := slogLogger.With(slog.Int("num", 42))
+	subLogger.Warn("warning", slog.Bool("flag", true))
+	entries = observed.TakeAll()
+	require.Len(t, entries, 1)
+	assert.Equal(t, zapcore.WarnLevel, entries[0].Level)
+	assert.Equal(t, "warning", entries[0].Message)
+	assert.Equal(t, []zapcore.Field{
+		zap.Int64("num", 42),
+		zap.Bool("flag", true),
+	}, entries[0].Context)
+
+	// Test WithGroup
+	groupLogger := slogLogger.WithGroup("mygroup")
+	groupLogger.Info("grouped", slog.String("inner", "value"))
+	entries = observed.TakeAll()
+	require.Len(t, entries, 1)
+	assert.Equal(t, zapcore.InfoLevel, entries[0].Level)
+	assert.Equal(t, "grouped", entries[0].Message)
+	
+	// In zap, WithGroup turns into a Namespace:
+	assert.Len(t, entries[0].Context, 2)
+	assert.Equal(t, zapcore.NamespaceType, entries[0].Context[0].Type)
+	assert.Equal(t, "mygroup", entries[0].Context[0].Key)
+	assert.Equal(t, zap.String("inner", "value"), entries[0].Context[1])
+}
+

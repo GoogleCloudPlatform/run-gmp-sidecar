@@ -189,11 +189,25 @@ func (h *slogZapHandler) Handle(_ context.Context, r slog.Record) error {
 }
 
 func (h *slogZapHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return h
+	if len(attrs) == 0 {
+		return h
+	}
+	fields := make([]zap.Field, 0, len(attrs))
+	for _, a := range attrs {
+		fields = append(fields, zap.Any(a.Key, a.Value.Any()))
+	}
+	return &slogZapHandler{
+		logger: h.logger.With(fields...),
+	}
 }
 
 func (h *slogZapHandler) WithGroup(name string) slog.Handler {
-	return h
+	if name == "" {
+		return h
+	}
+	return &slogZapHandler{
+		logger: h.logger.With(zap.Namespace(name)),
+	}
 }
 
 // NewZapToSlogAdapter creates an adapter for zap.Logger to slog.Logger
