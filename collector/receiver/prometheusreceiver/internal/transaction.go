@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sort"
 
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/exemplar"
@@ -86,9 +85,12 @@ func (t *transaction) Append(ref storage.SeriesRef, ls labels.Labels, atMs int64
 	default:
 	}
 
-	if len(t.externalLabels) != 0 {
-		ls = append(ls, t.externalLabels...)
-		sort.Sort(ls)
+	if !t.externalLabels.IsEmpty() {
+		b := labels.NewBuilder(ls)
+		t.externalLabels.Range(func(l labels.Label) {
+			b.Set(l.Name, l.Value)
+		})
+		ls = b.Labels()
 	}
 
 	if t.isNew {
@@ -132,8 +134,8 @@ func (t *transaction) Append(ref storage.SeriesRef, ls labels.Labels, atMs int64
 	}
 
 	curMF := t.getOrCreateMetricFamily(metricName)
-
-	return 0, curMF.addSeries(t.getSeriesRef(ls, curMF.mtype), metricName, ls, atMs, val)
+	seriesRef := t.getSeriesRef(ls, curMF.mtype)
+	return storage.SeriesRef(seriesRef), curMF.addSeries(seriesRef, metricName, ls, atMs, val)
 }
 
 func (t *transaction) getOrCreateMetricFamily(mn string) *metricFamily {
@@ -188,7 +190,14 @@ func (t *transaction) AppendHistogram(ref storage.SeriesRef, l labels.Labels, at
 	return 0, nil
 }
 
-func (t *transaction) AppendCTZeroSample(_ storage.SeriesRef, _ labels.Labels, _, _ int64) (storage.SeriesRef, error) {
+func (t *transaction) SetOptions(_ *storage.AppendOptions) {}
+
+func (t *transaction) AppendSTZeroSample(_ storage.SeriesRef, _ labels.Labels, _, _ int64) (storage.SeriesRef, error) {
+	//TODO: implement this func
+	return 0, nil
+}
+
+func (t *transaction) AppendHistogramSTZeroSample(_ storage.SeriesRef, _ labels.Labels, _, _ int64, _ *histogram.Histogram, _ *histogram.FloatHistogram) (storage.SeriesRef, error) {
 	//TODO: implement this func
 	return 0, nil
 }
@@ -218,7 +227,7 @@ func (t *transaction) getMetrics(resource pcommon.Resource) (pmetric.Metrics, er
 	return md, nil
 }
 
-func (t *transaction) initTransaction(labels labels.Labels) error {
+func (t *transaction) initTransaction(lbls labels.Labels) error {
 	target, ok := scrape.TargetFromContext(t.ctx)
 	if !ok {
 		return errors.New("unable to find target in context")
@@ -228,11 +237,11 @@ func (t *transaction) initTransaction(labels labels.Labels) error {
 		return errors.New("unable to find MetricMetadataStore in context")
 	}
 
-	job, instance := labels.Get(model.JobLabel), labels.Get(model.InstanceLabel)
+	job, instance := lbls.Get(model.JobLabel), lbls.Get(model.InstanceLabel)
 	if job == "" || instance == "" {
 		return errNoJobInstance
 	}
-	t.nodeResource = CreateResource(job, instance, target.DiscoveredLabels())
+	t.nodeResource = CreateResource(job, instance, target.DiscoveredLabels(labels.NewBuilder(labels.EmptyLabels())))
 	t.isNew = false
 	return nil
 }
@@ -273,16 +282,16 @@ func (t *transaction) UpdateMetadata(ref storage.SeriesRef, l labels.Labels, m m
 	return 0, nil
 }
 
-func (t *transaction) AddTargetInfo(labels labels.Labels) error {
+func (t *transaction) AddTargetInfo(lbls labels.Labels) error {
 	attrs := t.nodeResource.Attributes()
 
-	for _, lbl := range labels {
+	lbls.Range(func(lbl labels.Label) {
 		if lbl.Name == model.JobLabel || lbl.Name == model.InstanceLabel || lbl.Name == model.MetricNameLabel {
-			continue
+			return
 		}
 
 		attrs.PutStr(lbl.Name, lbl.Value)
-	}
+	})
 
 	return nil
 }

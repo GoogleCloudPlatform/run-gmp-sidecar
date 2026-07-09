@@ -54,6 +54,7 @@ var skippedTests = map[string]struct{}{
 	"bad_exemplars_on_unallowed_samples_0": {}, "bad_exemplars_on_unallowed_metric_types_0": {},
 	"bad_exemplars_on_unallowed_samples_1": {}, "bad_exemplars_on_unallowed_metric_types_1": {},
 	"bad_exemplars_on_unallowed_samples_3": {}, "bad_exemplars_on_unallowed_metric_types_2": {},
+	"bad_no_eof":                            {},
 }
 
 func verifyPositiveTarget(t *testing.T, _ *testData, mds []pmetric.ResourceMetrics) {

@@ -35,6 +35,8 @@ import (
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/receiver/receivertest"
+
+	"github.com/GoogleCloudPlatform/run-gmp-sidecar/collector/receiver/prometheusreceiver/internal/metadata"
 )
 
 type MockTargetAllocator struct {
@@ -504,7 +506,11 @@ func TestTargetAllocatorJobRetrieval(t *testing.T) {
 			defer allocator.Stop()
 
 			tc.cfg.TargetAllocator.Endpoint = allocator.srv.URL // set service URL with the automatic generated one
-			receiver := newPrometheusReceiver(receivertest.NewNopSettings(), tc.cfg, cms)
+			pCfg, err := promConfig.Load("global:\n  scrape_interval: 1m\n", nil)
+			require.NoError(t, err)
+			tc.cfg.PrometheusConfig = pCfg
+
+			receiver := newPrometheusReceiver(receivertest.NewNopSettings(metadata.Type), tc.cfg, cms)
 
 			require.NoError(t, receiver.Start(ctx, componenttest.NewNopHost()))
 			t.Cleanup(func() {

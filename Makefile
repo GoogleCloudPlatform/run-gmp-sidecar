@@ -157,7 +157,10 @@ test-collector:
 	$(MAKE) build-collector
 	go test -tags=$(GO_BUILD_TAGS) $(GO_TEST_VERBOSE) -p 1 -race ./...
 
-.PHONY: test_quiet
+.PHONY: test
+test: test-collector
+
+.PHONY: test_verbose
 test_verbose:
 	$(MAKE) GO_TEST_VERBOSE=-v test
 

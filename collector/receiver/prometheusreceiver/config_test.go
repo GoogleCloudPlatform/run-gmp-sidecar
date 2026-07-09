@@ -139,7 +139,7 @@ func TestLoadConfigFailsOnRenameDisallowed(t *testing.T) {
 	sub, err := cm.Sub(component.NewIDWithName(metadata.Type, "").String())
 	require.NoError(t, err)
 	require.NoError(t, sub.Unmarshal(cfg))
-	assert.Error(t, component.ValidateConfig(cfg))
+	assert.Error(t, cfg.(*Config).Validate())
 
 }
 
@@ -153,7 +153,7 @@ func TestRejectUnsupportedPrometheusFeatures(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, sub.Unmarshal(cfg))
 
-	err = component.ValidateConfig(cfg)
+	err = cfg.(*Config).Validate()
 	require.NotNil(t, err, "Expected a non-nil error")
 
 	wantErrMsg := `unsupported features:
@@ -178,7 +178,7 @@ func TestNonExistentAuthCredentialsFile(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, sub.Unmarshal(cfg))
 
-	err = component.ValidateConfig(cfg)
+	err = cfg.(*Config).Validate()
 	require.NotNil(t, err, "Expected a non-nil error")
 
 	wantErrMsg := `error checking authorization credentials file "/nonexistentauthcredentialsfile"`
@@ -197,7 +197,7 @@ func TestTLSConfigNonExistentCertFile(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, sub.Unmarshal(cfg))
 
-	err = component.ValidateConfig(cfg)
+	err = cfg.(*Config).Validate()
 	require.NotNil(t, err, "Expected a non-nil error")
 
 	wantErrMsg := `error checking client cert file "/nonexistentcertfile"`
@@ -216,7 +216,7 @@ func TestTLSConfigNonExistentKeyFile(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, sub.Unmarshal(cfg))
 
-	err = component.ValidateConfig(cfg)
+	err = cfg.(*Config).Validate()
 	require.NotNil(t, err, "Expected a non-nil error")
 
 	wantErrMsg := `error checking client key file "/nonexistentkeyfile"`
@@ -277,7 +277,7 @@ func TestFileSDConfigJsonNilTargetGroup(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, sub.Unmarshal(cfg))
 
-	err = component.ValidateConfig(cfg)
+	err = cfg.(*Config).Validate()
 	require.NotNil(t, err, "Expected a non-nil error")
 
 	wantErrMsg := `checking SD file "./testdata/sd-config-with-null-target-group.json": nil target group item found (index 1)`
@@ -296,7 +296,7 @@ func TestFileSDConfigYamlNilTargetGroup(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, sub.Unmarshal(cfg))
 
-	err = component.ValidateConfig(cfg)
+	err = cfg.(*Config).Validate()
 	require.NotNil(t, err, "Expected a non-nil error")
 
 	wantErrMsg := `checking SD file "./testdata/sd-config-with-null-target-group.yaml": nil target group item found (index 1)`

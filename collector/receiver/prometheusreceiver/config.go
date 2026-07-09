@@ -292,15 +292,20 @@ func (cfg *Config) Unmarshal(componentParser *confmap.Conf) error {
 	if err != nil || len(promCfg.ToStringMap()) == 0 {
 		return err
 	}
-	out, err := yaml.Marshal(promCfg.ToStringMap())
+	promMap := promCfg.ToStringMap()
+	if scrapeConfigs, ok := promMap["scrape_configs"].([]any); ok {
+		ensureProm2Compatibility(scrapeConfigs)
+	}
+	out, err := yaml.Marshal(promMap)
 	if err != nil {
 		return fmt.Errorf("prometheus receiver failed to marshal config to yaml: %w", err)
 	}
 
-	err = yaml.UnmarshalStrict(out, &cfg.PrometheusConfig)
+	pCfg, err := promconfig.Load(string(out), nil)
 	if err != nil {
-		return fmt.Errorf("prometheus receiver failed to unmarshal yaml to prometheus config: %w", err)
+		return fmt.Errorf("prometheus receiver failed to load prometheus config: %w", err)
 	}
+	cfg.PrometheusConfig = pCfg
 
 	// Unmarshal targetAllocator configs
 	targetAllocatorCfg, err := componentParser.Sub(targetAllocatorConfigKey)
@@ -326,4 +331,28 @@ func (cfg *Config) Unmarshal(componentParser *confmap.Conf) error {
 	}
 
 	return nil
+}
+
+func ensureProm2Compatibility(scrapeConfigs []any) {
+	for _, sc := range scrapeConfigs {
+		if scMap, ok := sc.(map[string]any); ok {
+			// Explicitly set fallback_scrape_protocol to PrometheusText0.0.4.
+			// The OTel Collector's config validator recursively walks Go structs at startup.
+			// Since ScrapeFallbackProtocol is left as Go's zero-value ("") and its type
+			// ScrapeProtocol implements a Validate() error method (with no arguments), OTel
+			// automatically calls it. Since "" is not a valid scrape protocol, this triggers
+			// a validation crash. Setting a valid default prevents this crash.
+			if scMap["fallback_scrape_protocol"] == nil || scMap["fallback_scrape_protocol"] == "" {
+				scMap["fallback_scrape_protocol"] = "PrometheusText0.0.4"
+			}
+
+			// Disable UTF-8 validation and escaping for Prometheus 2.x compatibility.
+			if scMap["metric_name_validation_scheme"] == nil || scMap["metric_name_validation_scheme"] == "" {
+				scMap["metric_name_validation_scheme"] = "legacy"
+			}
+			if scMap["metric_name_escaping_scheme"] == nil || scMap["metric_name_escaping_scheme"] == "" {
+				scMap["metric_name_escaping_scheme"] = "underscores"
+			}
+		}
+	}
 }

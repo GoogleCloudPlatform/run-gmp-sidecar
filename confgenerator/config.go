@@ -120,7 +120,7 @@ type ScrapeLimits struct {
 	LabelValueLength uint64 `yaml:"labelValueLength,omitempty"`
 }
 
-var allowedTargetMetadata = []string{"instance", "revision", "service", "configuration"}
+var allowedTargetMetadata = []string{"instance", "revision", "service", "configuration", "worker_pool"}
 
 const (
 	kind       = "RunMonitoring"
@@ -132,6 +132,7 @@ const (
 	cloudRunServiceLabel       = "service_name"
 	cloudRunRevisionLabel      = "revision_name"
 	cloudRunConfigurationLabel = "configuration_name"
+	cloudRunWorkerPoolLabel    = "worker_pool"
 )
 
 // DefaultRunMonitoringConfig creates a config that will be used by default if
@@ -309,11 +310,35 @@ func (rc *RunMonitoringConfig) endpointScrapeConfig(index int) (*promconfig.Scra
 	)
 }
 
-func relabelingsForMetadata(keys map[string]struct{}, env *CloudRunEnvironment) (res []*relabel.Config) {
+func relabelingsForMetadata(keys map[string]struct{}, env *CloudRunEnvironment) []*relabel.Config {
 	if env == nil {
-		return
+		return nil
 	}
+	if env.WorkerPool != "" {
+		return workerPoolRelabelings(keys, env)
+	}
+	return serviceRelabelings(keys, env)
+}
 
+func workerPoolRelabelings(keys map[string]struct{}, env *CloudRunEnvironment) (res []*relabel.Config) {
+	if _, ok := keys["worker_pool"]; ok {
+		res = append(res, &relabel.Config{
+			Action:      relabel.Replace,
+			Replacement: env.WorkerPool,
+			TargetLabel: cloudRunWorkerPoolLabel,
+		})
+	}
+	if _, ok := keys["revision"]; ok {
+		res = append(res, &relabel.Config{
+			Action:      relabel.Replace,
+			Replacement: env.Revision,
+			TargetLabel: cloudRunRevisionLabel,
+		})
+	}
+	return res
+}
+
+func serviceRelabelings(keys map[string]struct{}, env *CloudRunEnvironment) (res []*relabel.Config) {
 	if _, ok := keys["service"]; ok {
 		res = append(res, &relabel.Config{
 			Action:      relabel.Replace,
@@ -349,6 +374,10 @@ func endpointScrapeConfig(id, cfgName string, ep ScrapeEndpoint, relabelCfgs []*
 			&targetgroup.Group{Targets: []prommodel.LabelSet{labelSet}},
 		},
 	}
+	namespaceVal := env.Service
+	if namespaceVal == "" {
+		namespaceVal = env.WorkerPool
+	}
 	relabelCfgs = append(relabelCfgs,
 		&relabel.Config{
 			Action:      relabel.Replace,
@@ -363,7 +392,7 @@ func endpointScrapeConfig(id, cfgName string, ep ScrapeEndpoint, relabelCfgs []*
 		&relabel.Config{
 			Action:      relabel.Replace,
 			TargetLabel: "namespace",
-			Replacement: env.Service,
+			Replacement: namespaceVal,
 		},
 		// The `instance` label will be <faas.instance>:<port> in the final metric.
 		// But since <faas.instance> is unavailable until the gcp resource detector
@@ -418,6 +447,13 @@ func endpointScrapeConfig(id, cfgName string, ep ScrapeEndpoint, relabelCfgs []*
 		RelabelConfigs:          relabelCfgs,
 		MetricRelabelConfigs:    metricRelabelCfgs,
 		ScrapeProtocols:         promconfig.DefaultScrapeProtocols,
+		// Explicitly set ScrapeFallbackProtocol to PrometheusText0.0.4.
+		// The OTel Collector's config validator recursively walks Go structs at startup.
+		// Since ScrapeFallbackProtocol is left as Go's zero-value ("") and its type
+		// ScrapeProtocol implements a Validate() error method (with no arguments), OTel
+		// automatically calls it. Since "" is not a valid scrape protocol, this triggers
+		// a validation crash. Setting a valid default prevents this crash.
+		ScrapeFallbackProtocol:  promconfig.PrometheusText0_0_4,
 	}
 	if limits != nil {
 		scrapeCfg.SampleLimit = uint(limits.Samples)

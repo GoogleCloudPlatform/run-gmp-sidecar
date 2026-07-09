@@ -15,6 +15,9 @@
 package internal // import "github.com/GoogleCloudPlatform/run-gmp-sidecar/collector/receiver/prometheusreceiver/internal"
 
 import (
+	"context"
+	"log/slog"
+
 	gokitLog "github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"go.uber.org/zap"
@@ -151,3 +154,63 @@ func levelToFunc(logger *zap.SugaredLogger, lvl level.Value) func(string, ...int
 }
 
 var _ gokitLog.Logger = (*zapToGokitLogAdapter)(nil)
+
+// slogZapHandler is a bridge between Go's standard structured logging framework (log/slog)
+// and zap.Logger used in the collector.
+// This adapter is needed because upstream Prometheus libraries (e.g. discovery, scraping)
+// have transitioned to using log/slog, whereas the collector continues to configure and use zap.Logger.
+type slogZapHandler struct {
+	logger *zap.Logger
+}
+
+func (h *slogZapHandler) Enabled(_ context.Context, _ slog.Level) bool {
+	return true
+}
+
+func (h *slogZapHandler) Handle(_ context.Context, r slog.Record) error {
+	fields := make([]zap.Field, 0, r.NumAttrs())
+	r.Attrs(func(a slog.Attr) bool {
+		fields = append(fields, zap.Any(a.Key, a.Value.Any()))
+		return true
+	})
+	switch r.Level {
+	case slog.LevelDebug:
+		h.logger.Debug(r.Message, fields...)
+	case slog.LevelInfo:
+		h.logger.Info(r.Message, fields...)
+	case slog.LevelWarn:
+		h.logger.Warn(r.Message, fields...)
+	case slog.LevelError:
+		h.logger.Error(r.Message, fields...)
+	default:
+		h.logger.Info(r.Message, fields...)
+	}
+	return nil
+}
+
+func (h *slogZapHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	if len(attrs) == 0 {
+		return h
+	}
+	fields := make([]zap.Field, 0, len(attrs))
+	for _, a := range attrs {
+		fields = append(fields, zap.Any(a.Key, a.Value.Any()))
+	}
+	return &slogZapHandler{
+		logger: h.logger.With(fields...),
+	}
+}
+
+func (h *slogZapHandler) WithGroup(name string) slog.Handler {
+	if name == "" {
+		return h
+	}
+	return &slogZapHandler{
+		logger: h.logger.With(zap.Namespace(name)),
+	}
+}
+
+// NewZapToSlogAdapter creates an adapter for zap.Logger to slog.Logger
+func NewZapToSlogAdapter(logger *zap.Logger) *slog.Logger {
+	return slog.New(&slogZapHandler{logger: logger})
+}

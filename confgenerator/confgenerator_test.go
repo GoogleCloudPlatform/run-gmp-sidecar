@@ -35,7 +35,14 @@ const (
 	inputFileName          = "input.yaml"
 )
 
-func testMetadata() *confgenerator.CloudRunEnvironment {
+func testMetadata(testName string) *confgenerator.CloudRunEnvironment {
+	if strings.Contains(testName, "workerpool") {
+		return &confgenerator.CloudRunEnvironment{
+			WorkerPool:    "test_workerpool",
+			Revision:      "test_workerpool_revision",
+			Configuration: "",
+		}
+	}
 	return &confgenerator.CloudRunEnvironment{
 		Service:       "test_service",
 		Revision:      "test_revision",
@@ -109,7 +116,7 @@ func generateConfigs(testDir string) (got map[string]string, err error) {
 	}
 
 	// Use deterministic metadata and self metrics port for tests
-	c.Env = testMetadata()
+	c.Env = testMetadata(testDir)
 	selfMetricsPort := 42
 
 	// Otel configs

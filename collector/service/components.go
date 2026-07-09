@@ -15,8 +15,6 @@
 package service
 
 import (
-	"go.opentelemetry.io/collector/component"
-
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/fileexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor"
@@ -55,7 +53,15 @@ func components() (otelcol.Factories, error) {
 	for _, ext := range factories.Extensions {
 		extensions = append(extensions, ext)
 	}
-	factories.Extensions, err = otelcol.MakeFactoryMap[extension.Factory](extensions...)
+	seenExtensions := make(map[string]bool)
+	var uniqueExtensions []extension.Factory
+	for _, ext := range extensions {
+		if !seenExtensions[ext.Type().String()] {
+			seenExtensions[ext.Type().String()] = true
+			uniqueExtensions = append(uniqueExtensions, ext)
+		}
+	}
+	factories.Extensions, err = otelcol.MakeFactoryMap[extension.Factory](uniqueExtensions...)
 	if err != nil {
 		errs = append(errs, err)
 	}
@@ -66,7 +72,15 @@ func components() (otelcol.Factories, error) {
 	for _, rcv := range factories.Receivers {
 		receivers = append(receivers, rcv)
 	}
-	factories.Receivers, err = otelcol.MakeFactoryMap[receiver.Factory](receivers...)
+	seenReceivers := make(map[string]bool)
+	var uniqueReceivers []receiver.Factory
+	for _, rcv := range receivers {
+		if !seenReceivers[rcv.Type().String()] {
+			seenReceivers[rcv.Type().String()] = true
+			uniqueReceivers = append(uniqueReceivers, rcv)
+		}
+	}
+	factories.Receivers, err = otelcol.MakeFactoryMap[receiver.Factory](uniqueReceivers...)
 	if err != nil {
 		errs = append(errs, err)
 	}
@@ -79,7 +93,15 @@ func components() (otelcol.Factories, error) {
 	for _, exp := range factories.Exporters {
 		exporters = append(exporters, exp)
 	}
-	factories.Exporters, err = otelcol.MakeFactoryMap[exporter.Factory](exporters...)
+	seenExporters := make(map[string]bool)
+	var uniqueExporters []exporter.Factory
+	for _, exp := range exporters {
+		if !seenExporters[exp.Type().String()] {
+			seenExporters[exp.Type().String()] = true
+			uniqueExporters = append(uniqueExporters, exp)
+		}
+	}
+	factories.Exporters, err = otelcol.MakeFactoryMap[exporter.Factory](uniqueExporters...)
 	if err != nil {
 		errs = append(errs, err)
 	}
@@ -95,7 +117,15 @@ func components() (otelcol.Factories, error) {
 	for _, pr := range factories.Processors {
 		processors = append(processors, pr)
 	}
-	factories.Processors, err = otelcol.MakeFactoryMap[processor.Factory](processors...)
+	seenProcessors := make(map[string]bool)
+	var uniqueProcessors []processor.Factory
+	for _, pr := range processors {
+		if !seenProcessors[pr.Type().String()] {
+			seenProcessors[pr.Type().String()] = true
+			uniqueProcessors = append(uniqueProcessors, pr)
+		}
+	}
+	factories.Processors, err = otelcol.MakeFactoryMap[processor.Factory](uniqueProcessors...)
 	if err != nil {
 		errs = append(errs, err)
 	}
