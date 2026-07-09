@@ -30,6 +30,7 @@ replaces:
   to: github.com/mattn/go-ieproxy v0.0.1
   reason: "Currently causes build issues on windows. Downgrading to previous version."
 - from: github.com/prometheus/prometheus
+  # TODO: Unfork the prometheus receiver once upstream supports shutdown scrapes
   to: github.com/avilevy18/prometheus v0.0.0-20260617191927-29f66dde2eef
   reason: "Point to our fork of Prometheus at branch: feature/shutdownscrape"
 components:

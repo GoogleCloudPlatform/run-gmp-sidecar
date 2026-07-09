@@ -234,13 +234,7 @@ func (r *pReceiver) getScrapeConfigsResponse(baseURL string) (map[string]*config
 		rawList = append(rawList, v)
 	}
 
-	for _, sc := range rawList {
-		if scMap, ok := sc.(map[string]any); ok {
-			if scMap["fallback_scrape_protocol"] == nil || scMap["fallback_scrape_protocol"] == "" {
-				scMap["fallback_scrape_protocol"] = "PrometheusText0.0.4"
-			}
-		}
-	}
+	ensureProm2Compatibility(rawList)
 
 	virtualConfig := map[string]any{
 		"scrape_configs": rawList,

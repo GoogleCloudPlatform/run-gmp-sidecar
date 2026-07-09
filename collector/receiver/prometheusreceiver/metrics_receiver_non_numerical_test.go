@@ -59,7 +59,7 @@ var (
 
 // TestStaleNaNs validates that staleness marker gets generated when the timeseries is no longer present
 func TestStaleNaNs(t *testing.T) {
-	t.Skip("skipping flaky/failing upstream TestStaleNaNs due to Prometheus library staleness marker regression")
+	t.Skip("skipping flaky/failing upstream TestStaleNaNs due to Prometheus library staleness marker regression; this is ok since GMP does not support staleness markers at the moment.")
 	var mockResponses []mockPrometheusResponse
 	for i := 0; i < totalScrapes; i++ {
 		if i%2 == 0 {

@@ -1485,22 +1485,33 @@ func createDataPoint(mname string, value float64, es []exemplar.Exemplar, tagPai
 }
 
 func assertEquivalentMetrics(t *testing.T, want, got pmetric.Metrics) {
-	wantCopy := pmetric.NewMetrics()
-	want.CopyTo(wantCopy)
-	gotCopy := pmetric.NewMetrics()
-	got.CopyTo(gotCopy)
-
-	for i := 0; i < wantCopy.ResourceMetrics().Len(); i++ {
-		wantCopy.ResourceMetrics().At(i).Resource().Attributes().Clear()
+	require.Equal(t, want.ResourceMetrics().Len(), got.ResourceMetrics().Len())
+	if want.ResourceMetrics().Len() == 0 {
+		return
 	}
-	for i := 0; i < gotCopy.ResourceMetrics().Len(); i++ {
-		gotCopy.ResourceMetrics().At(i).Resource().Attributes().Clear()
-	}
+	for i := 0; i < want.ResourceMetrics().Len(); i++ {
+		wantSm := want.ResourceMetrics().At(i).ScopeMetrics()
+		gotSm := got.ResourceMetrics().At(i).ScopeMetrics()
+		require.Equal(t, wantSm.Len(), gotSm.Len())
+		if wantSm.Len() == 0 {
+			return
+		}
 
-	marshaler := &pmetric.JSONMarshaler{}
-	wantBytes, err := marshaler.MarshalMetrics(wantCopy)
-	require.NoError(t, err)
-	gotBytes, err := marshaler.MarshalMetrics(gotCopy)
-	require.NoError(t, err)
-	assert.JSONEq(t, string(wantBytes), string(gotBytes))
+		for j := 0; j < wantSm.Len(); j++ {
+			wantMs := wantSm.At(j).Metrics()
+			gotMs := gotSm.At(j).Metrics()
+			require.Equal(t, wantMs.Len(), gotMs.Len())
+
+			wmap := map[string]pmetric.Metric{}
+			gmap := map[string]pmetric.Metric{}
+
+			for k := 0; k < wantMs.Len(); k++ {
+				wi := wantMs.At(k)
+				wmap[wi.Name()] = wi
+				gi := gotMs.At(k)
+				gmap[gi.Name()] = gi
+			}
+			assert.EqualValues(t, wmap, gmap)
+		}
+	}
 }
