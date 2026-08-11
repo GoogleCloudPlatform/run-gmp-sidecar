@@ -130,7 +130,7 @@ func main() {
 	var procAttr os.ProcAttr
 	procAttr.Files = []*os.File{nil, /* stdin is not needed for the collector */
 		os.Stdout, os.Stderr}
-	collectorProcess, err := os.StartProcess("./rungmpcol", []string{"./rungmpcol", "--config", otelConfigFile}, &procAttr)
+	collectorProcess, err := os.StartProcess("./rungmpcol", []string{"./rungmpcol", "--feature-gates=exporter.googlemanagedprometheus.intToDouble", "--config", otelConfigFile}, &procAttr)
 	if err != nil {
 		log.Fatal(err)
 	}
