@@ -4,7 +4,7 @@ dist:
   module: github.com/GoogleCloudPlatform/run-gmp-sidecar/run-gmp
   name: rungmpcol
   description: The Cloud Run GMP Sidecar build of the OTel Collector
-  version: 1.9.6
+  version: 1.9.7
   output_path: ./_build
 
 receivers:
@@ -49,4 +49,10 @@ replaces:
 - github.com/mattn/go-ieproxy v0.0.9 => github.com/mattn/go-ieproxy v0.0.1
 # Point to our fork of Prometheus at branch: feature/shutdownscrape_v0.54.1
 - github.com/prometheus/prometheus => github.com/jefferbrecht/prometheus v0.0.0-20260325153347-5774096a9705
+# Force update go.opentelemetry.io/otel/trace to v1.47.0.
+- go.opentelemetry.io/otel/trace => go.opentelemetry.io/otel/trace v1.47.0
+# Force update go.opentelemetry.io/otel/sdk to v1.47.0.
+- go.opentelemetry.io/otel/sdk => go.opentelemetry.io/otel/sdk v1.47.0
+# Force update go.opentelemetry.io/otel/sdk/log to v1.47.0.
+- go.opentelemetry.io/otel/sdk/log => go.opentelemetry.io/otel/sdk/log v1.47.0
 
